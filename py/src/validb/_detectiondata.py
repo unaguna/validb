@@ -1,4 +1,5 @@
 from collections import defaultdict
+from itertools import chain
 import typing as t
 
 from ._detected import Detected
@@ -34,3 +35,9 @@ class DetectionData(t.Generic[ID, MSG_TYPE, MSG]):
             return self._by_msg_type[key]
         else:
             raise KeyError(key)
+
+    def values(self) -> t.Generator[Detected[ID, MSG_TYPE, MSG], None, None]:
+        return (detected for detected in chain(*self._by_id.values()))
+
+    def rows(self) -> t.Generator[t.Sequence[t.Any], None, None]:
+        return (detected.row() for detected in self.values())

@@ -1,5 +1,6 @@
 import enum
 import os
+import sys
 import typing as t
 
 from validb import Detected, SimpleRule, validate_db
@@ -39,6 +40,7 @@ rules: t.List[SimpleRule[str, MyMsgType, str]] = [
 
 
 if __name__ == "__main__":
+    import csv
     from sqlalchemy import create_engine
     from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -55,8 +57,13 @@ if __name__ == "__main__":
         session=session,
     )
 
+    session.close()
+
     for id in detection_data.ids():
         print(detection_data[id])
 
     for msg_type in detection_data.msg_types():
         print(detection_data[msg_type])
+
+    spamwriter = csv.writer(sys.stdout)
+    spamwriter.writerows(detection_data.rows())
