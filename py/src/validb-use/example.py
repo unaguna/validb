@@ -2,7 +2,7 @@ import enum
 import os
 import typing as t
 
-from validb import Detected, SimpleRule
+from validb import Detected, DetectionData, SimpleRule
 
 
 class MyMsgType(enum.Enum):
@@ -17,6 +17,9 @@ class MyDetected(Detected[str, MyMsgType, str]):
             self.msg_type.value,
             self.msg,
         )
+
+    def __repr__(self) -> str:
+        return f"<MyDetected: {self.row()}>"
 
 
 rules: t.List[SimpleRule[MyMsgType, str]] = [
@@ -42,11 +45,15 @@ if __name__ == "__main__":
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
 
-    detected_list: t.List[MyDetected] = []
+    detection_data: DetectionData[str, MyMsgType, str] = DetectionData()
     for rule in rules:
         sql = text(rule.sql)
         for r in session.execute(sql).mappings():
             msg_type, msg = rule.detected()
-            detected_list.append(MyDetected(id=r["Code"], msg_type=msg_type, msg=msg))
+            detection_data.append(MyDetected(id=r["Code"], msg_type=msg_type, msg=msg))
 
-    print([d.row() for d in detected_list])
+    for id in detection_data.ids():
+        print(detection_data[id])
+
+    for msg_type in detection_data.msg_types():
+        print(detection_data[msg_type])
