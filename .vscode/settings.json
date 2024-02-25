@@ -1,5 +1,6 @@
 {
-  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.diagnosticMode": "workspace",
   "editor.formatOnSave": true,
   "files.associations": {
     "*.sql": "sql"
