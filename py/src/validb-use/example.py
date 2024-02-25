@@ -58,13 +58,16 @@ if __name__ == "__main__":
 
     session.close()
 
+    # Outputs a summary of anomalies per record
     for id in detection_data.ids():
         print(detection_data[id])
 
+    # Outputs a summary of anomalies per message type
     for msg_type in detection_data.msg_types():
         print(detection_data[msg_type])
 
+    # Outputs anomalies as CSV
     spamwriter = csv.writer(sys.stdout)
     spamwriter.writerows(detection_data.rows())
 
-    print(detection_data.too_many_detection)
+    print(f"too_many_detection={detection_data.too_many_detection}")
