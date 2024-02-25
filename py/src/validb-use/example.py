@@ -2,11 +2,12 @@ import enum
 import os
 import typing as t
 
-from validb import Detected
+from validb import Detected, SimpleRule
 
 
 class MyMsgType(enum.Enum):
     NULL_YEAR = "NULL_YEAR"
+    TOO_SMALL = "TOO_SMALL"
 
 
 class MyDetected(Detected[str, MyMsgType, str]):
@@ -17,6 +18,19 @@ class MyDetected(Detected[str, MyMsgType, str]):
             self.msg,
         )
 
+
+rules: t.List[SimpleRule[MyMsgType, str]] = [
+    SimpleRule(
+        "SELECT * FROM country where InDepYear is NULL",
+        MyMsgType.NULL_YEAR,
+        "null year",
+    ),
+    SimpleRule(
+        "SELECT * FROM country where SurfaceArea < Population",
+        MyMsgType.TOO_SMALL,
+        "too small",
+    ),
+]
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
@@ -29,10 +43,10 @@ if __name__ == "__main__":
     )
 
     detected_list: t.List[MyDetected] = []
-    sql = text("SELECT * FROM country where InDepYear is NULL")
-    for r in session.execute(sql).mappings():
-        detected_list.append(
-            MyDetected(id=r["Code"], msg_type=MyMsgType.NULL_YEAR, msg="?")
-        )
+    for rule in rules:
+        sql = text(rule.sql)
+        for r in session.execute(sql).mappings():
+            msg_type, msg = rule.detected()
+            detected_list.append(MyDetected(id=r["Code"], msg_type=msg_type, msg=msg))
 
     print([d.row() for d in detected_list])
