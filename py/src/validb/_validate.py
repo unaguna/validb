@@ -21,6 +21,27 @@ def validate_db(
     session: t.Union[Session, scoped_session[Session]],
     max_detection: t.Optional[int] = None,
 ) -> DetectionData[ID, MSG_TYPE, MSG]:
+    """Validate data in the database.
+
+    Parameters
+    ----------
+    rules : Collection[Rule]
+        the list of validation rules
+    detected : Callable[[ID, MSG_TYPE, MSG], Detected]
+        the constructor of Detected class;
+        Typically, it is sufficient to specify the subclass itself of Detected.
+    session : Session
+        a session to the database
+    max_detection : int, optional
+        maximum number of detections.
+        More detections than the specified number is ignored.
+        If more incorrect data are detected than the specified number, flag `too_many_detection` of the result is set to True.
+
+    Returns
+    -------
+    DetectionData
+        the result data
+    """
     detection_data: DetectionData[ID, MSG_TYPE, MSG] = DetectionData(
         max_detection=max_detection,
     )
