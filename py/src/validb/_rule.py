@@ -1,4 +1,5 @@
 import abc
+import pathlib
 import typing as t
 
 import sqlalchemy
@@ -147,12 +148,14 @@ class RuleDef(t.TypedDict):
     msg: str
 
 
-def load_rules_from_yaml(filepath: str) -> t.List[TextRule]:
+def load_rules_from_yaml(
+    filepath: t.Union[str, bytes, pathlib.Path]
+) -> t.List[TextRule]:
     """Load validation rules from the YAML file.
 
     Parameters
     ----------
-    filepath : str
+    filepath : str | bytes | Path
         filepath to the YAML file
 
     Returns
