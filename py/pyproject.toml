@@ -1,0 +1,31 @@
+# reference: https://packaging.python.org/ja/latest/guides/writing-pyproject-toml/
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "validb.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["validb-use"]
+
+[project]
+name = "validb"
+dynamic = ["version"]
+dependencies = ["SQLAlchemy", "click"]
+requires-python = ">=3.8"
+authors = [{ name = "k-izumi", email = "k.izumi.ysk@gmail.com" }]
+description = "validate DB data"
+# readme = "README.md"
+license = { text = "MIT License" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/unaguna/validb"
+Repository = "https://github.com/unaguna/validb.git"
