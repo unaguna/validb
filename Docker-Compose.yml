@@ -26,6 +26,8 @@ services:
       - mysql_root_password
     networks:
       - validb-network
+    ports:
+      - "13306:3306"
 networks:
   validb-network:
     name: validb-network
