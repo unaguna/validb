@@ -55,6 +55,7 @@ if __name__ == "__main__":
             id=id, msg_type=msg_type, msg=msg
         ),
         session=session,
+        max_detection=None,
     )
 
     session.close()
@@ -67,3 +68,5 @@ if __name__ == "__main__":
 
     spamwriter = csv.writer(sys.stdout)
     spamwriter.writerows(detection_data.rows())
+
+    print(detection_data.too_many_detection)

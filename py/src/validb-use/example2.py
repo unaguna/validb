@@ -33,3 +33,5 @@ if __name__ == "__main__":
 
     spamwriter = csv.writer(sys.stdout)
     spamwriter.writerows(detection_data.rows())
+
+    print(detection_data.too_many_detection)
