@@ -1,0 +1,32 @@
+{
+  "python.analysis.typeCheckingMode": "basic",
+  "editor.formatOnSave": true,
+  "files.associations": {
+    "*.sql": "sql"
+  },
+  "files.eol": "\n",
+  "files.encoding": "utf8",
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "terminal.integrated.env.windows": {
+    "PYTHONPATH": "${workspaceRoot}\\py\\src;${env:PYTHONPATH}"
+  },
+  "terminal.integrated.env.linux": {
+    "PYTHONPATH": "${workspaceRoot}/py/src:${env:PYTHONPATH}"
+  },
+  "cSpell.enabled": true,
+  "cSpell.allowCompoundWords": true,
+  "cSpell.customDictionaries": {
+    "custom-dictionary-project": {
+      "name": "custom-dictionary-project",
+      "path": "${workspaceFolder}/.cspell/custom-dictionary-project.txt",
+      "addWords": true,
+      "scope": "workspace"
+    }
+  }
+}

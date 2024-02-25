@@ -1,0 +1,34 @@
+version: "3.8"
+services:
+  py:
+    build:
+      context: ./py/
+    volumes:
+      - ./py/src:/root/src
+    image: validb-py
+    container_name: py
+    hostname: validb-py
+    networks:
+      - validb-network
+    tty: true
+  mysql:
+    build:
+      context: ./mysql/
+    volumes:
+      - ./mysql/log:/var/log/mysql
+      - ./mysql/db:/docker-entrypoint-initdb.d
+    image: validb-mysql
+    container_name: mysql
+    hostname: validb-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    secrets:
+      - mysql_root_password
+    networks:
+      - validb-network
+networks:
+  validb-network:
+    name: validb-network
+secrets:
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
