@@ -3,7 +3,7 @@ import typing as t
 from sqlalchemy.orm import Session, scoped_session
 from sqlalchemy.sql import text
 
-from ._detected import Detected, ID, MSG, MSG_TYPE
+from ._detected import Detected, ID, MSG, MSG_TYPE, TextDetected
 from ._rule import Rule
 from ._detectiondata import DetectionData, TooManyDetectionException
 
@@ -17,7 +17,7 @@ class _DetectedType(t.Protocol, t.Generic[ID, MSG_TYPE, MSG]):
 def validate_db(
     *,
     rules: t.Collection[Rule[ID, MSG_TYPE, MSG]],
-    detected: _DetectedType[ID, MSG_TYPE, MSG],
+    detected: _DetectedType[ID, MSG_TYPE, MSG] = TextDetected,
     session: t.Union[Session, scoped_session[Session]],
     max_detection: t.Optional[int] = None,
 ) -> DetectionData[ID, MSG_TYPE, MSG]:

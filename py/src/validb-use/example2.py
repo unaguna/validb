@@ -1,7 +1,7 @@
 import os
 import sys
 
-from validb import TextDetected, validate_db, load_rules_from_yaml
+from validb import validate_db, load_rules_from_yaml
 
 
 if __name__ == "__main__":
@@ -19,7 +19,6 @@ if __name__ == "__main__":
 
     detection_data = validate_db(
         rules=rules,
-        detected=TextDetected,
         session=session,
     )
 
