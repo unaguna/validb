@@ -14,9 +14,11 @@
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
   "terminal.integrated.env.windows": {
+    "DEV_DB_URL": "mysql+pymysql://?read_default_file=${workspaceRoot}\\py\\host_my.cnf",
     "PYTHONPATH": "${workspaceRoot}\\py\\src;${env:PYTHONPATH}"
   },
   "terminal.integrated.env.linux": {
+    "DEV_DB_URL": "mysql+pymysql://?read_default_file=${workspaceRoot}/py/host_my.cnf",
     "PYTHONPATH": "${workspaceRoot}/py/src:${env:PYTHONPATH}"
   },
   "cSpell.enabled": true,
