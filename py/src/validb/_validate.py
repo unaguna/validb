@@ -8,10 +8,16 @@ from ._rule import Rule
 from ._detectiondata import DetectionData, TooManyDetectionException
 
 
+class _DetectedType(t.Protocol, t.Generic[ID, MSG_TYPE, MSG]):
+    def __call__(
+        self, id: ID, msg_type: MSG_TYPE, msg: MSG
+    ) -> Detected[ID, MSG_TYPE, MSG]: ...
+
+
 def validate_db(
     *,
     rules: t.Collection[Rule[ID, MSG_TYPE, MSG]],
-    detected: t.Callable[[ID, MSG_TYPE, MSG], Detected[ID, MSG_TYPE, MSG]],
+    detected: _DetectedType[ID, MSG_TYPE, MSG],
     session: t.Union[Session, scoped_session[Session]],
     max_detection: t.Optional[int] = None,
 ) -> DetectionData[ID, MSG_TYPE, MSG]:

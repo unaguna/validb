@@ -51,9 +51,7 @@ if __name__ == "__main__":
 
     detection_data = validate_db(
         rules=rules,
-        detected=lambda id, msg_type, msg: MyDetected(
-            id=id, msg_type=msg_type, msg=msg
-        ),
+        detected=MyDetected,
         session=session,
         max_detection=None,
     )
