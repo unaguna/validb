@@ -8,21 +8,17 @@ if __name__ == "__main__":
     import csv
     import os
     from sqlalchemy import create_engine
-    from sqlalchemy.orm import scoped_session, sessionmaker
+    from sqlalchemy.orm import Session
 
     rules = load_rules_from_yaml(os.path.join(os.path.dirname(__file__), "rules.yml"))
 
     engine = create_engine(os.environ["DEV_DB_URL"])
-    session = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    )
 
-    detection_data = validate_db(
-        rules=rules,
-        session=session,
-    )
-
-    session.close()
+    with Session(engine) as session:
+        detection_data = validate_db(
+            rules=rules,
+            session=session,
+        )
 
     # Outputs a summary of anomalies per record
     for id in detection_data.ids():

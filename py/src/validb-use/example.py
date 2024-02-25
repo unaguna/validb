@@ -42,21 +42,17 @@ rules: t.List[SimpleRule[str, MyMsgType, str]] = [
 if __name__ == "__main__":
     import csv
     from sqlalchemy import create_engine
-    from sqlalchemy.orm import scoped_session, sessionmaker
+    from sqlalchemy.orm import Session
 
     engine = create_engine(os.environ["DEV_DB_URL"])
-    session = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    )
 
-    detection_data = validate_db(
-        rules=rules,
-        detected=MyDetected,
-        session=session,
-        max_detection=None,
-    )
-
-    session.close()
+    with Session(engine) as session:
+        detection_data = validate_db(
+            rules=rules,
+            detected=MyDetected,
+            session=session,
+            max_detection=None,
+        )
 
     # Outputs a summary of anomalies per record
     for id in detection_data.ids():
