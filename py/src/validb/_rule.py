@@ -50,15 +50,15 @@ class SimpleRule(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
 
 class TextRule(Rule[str, str, str]):
     _sql: str
-    _id_field: int
+    _id_template: str
     _msg_type: str
     _msg: str
 
-    def __init__(self, sql: str, id_field: int, msg_type: str, msg: str) -> None:
+    def __init__(self, sql: str, id_template: str, msg_type: str, msg: str) -> None:
         super().__init__()
 
         self._sql = sql
-        self._id_field = id_field
+        self._id_template = id_template
         self._msg_type = msg_type
         self._msg = msg
 
@@ -67,7 +67,7 @@ class TextRule(Rule[str, str, str]):
         return self._sql
 
     def id_of_row(self, row: sqlalchemy.Row[t.Any]) -> str:
-        return row[self._id_field]
+        return self._id_template.format(*row)
 
     def detected(self) -> t.Tuple[str, str]:
         return self._msg_type, self._msg
@@ -75,7 +75,7 @@ class TextRule(Rule[str, str, str]):
 
 class RuleDef(t.TypedDict):
     sql: str
-    id: int
+    id: str
     msg_type: str
     msg: str
 
@@ -89,7 +89,7 @@ def load_rules_from_yaml(filepath: str) -> t.List[TextRule]:
     return [
         TextRule(
             sql=rule["sql"],
-            id_field=rule["id"],
+            id_template=rule["id"],
             msg_type=rule["msg_type"],
             msg=rule["msg"],
         )
