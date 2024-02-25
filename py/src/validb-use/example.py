@@ -2,7 +2,7 @@ import enum
 import os
 import typing as t
 
-from validb import Detected, DetectionData, SimpleRule
+from validb import Detected, SimpleRule, validate_db
 
 
 class MyMsgType(enum.Enum):
@@ -37,24 +37,23 @@ rules: t.List[SimpleRule[str, MyMsgType, str]] = [
     ),
 ]
 
+
 if __name__ == "__main__":
     from sqlalchemy import create_engine
     from sqlalchemy.orm import scoped_session, sessionmaker
-    from sqlalchemy.sql import text
 
     engine = create_engine(os.environ["DEV_DB_URL"])
     session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
 
-    detection_data: DetectionData[str, MyMsgType, str] = DetectionData()
-    for rule in rules:
-        sql = text(rule.sql)
-        for r in session.execute(sql):
-            msg_type, msg = rule.detected()
-            detection_data.append(
-                MyDetected(id=rule.id_of_row(r), msg_type=msg_type, msg=msg)
-            )
+    detection_data = validate_db(
+        rules=rules,
+        detected=lambda id, msg_type, msg: MyDetected(
+            id=id, msg_type=msg_type, msg=msg
+        ),
+        session=session,
+    )
 
     for id in detection_data.ids():
         print(detection_data[id])
