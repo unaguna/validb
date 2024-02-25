@@ -84,6 +84,11 @@ class DetectionData(t.Generic[ID, MSG_TYPE, MSG]):
         return self._by_msg_type.keys()
 
     @property
+    def count(self) -> int:
+        """Number of anomalies detected"""
+        return self._append_cnt
+
+    @property
     def too_many_detection(self) -> bool:
         """Whether the number of detections exceeds the initially specified maximum number of detections
 
