@@ -32,3 +32,15 @@ class Detected(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
     @abc.abstractmethod
     def row(self) -> t.Sequence[t.Any]:
         pass
+
+
+class TextDetected(Detected[str, str, str]):
+    def row(self) -> t.Tuple[str, str, str]:
+        return (
+            self.id,
+            self.msg_type,
+            self.msg,
+        )
+
+    def __repr__(self) -> str:
+        return f"<TextDetected: {self.row()}>"

@@ -1,20 +1,7 @@
 import os
 import sys
-import typing as t
 
-from validb import Detected, validate_db, load_rules_from_yaml
-
-
-class MyDetected(Detected[str, str, str]):
-    def row(self) -> t.Tuple[str, str, str]:
-        return (
-            self.id,
-            self.msg_type,
-            self.msg,
-        )
-
-    def __repr__(self) -> str:
-        return f"<MyDetected: {self.row()}>"
+from validb import TextDetected, validate_db, load_rules_from_yaml
 
 
 if __name__ == "__main__":
@@ -32,9 +19,7 @@ if __name__ == "__main__":
 
     detection_data = validate_db(
         rules=rules,
-        detected=lambda id, msg_type, msg: MyDetected(
-            id=id, msg_type=msg_type, msg=msg
-        ),
+        detected=TextDetected,
         session=session,
     )
 
