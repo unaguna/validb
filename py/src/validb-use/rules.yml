@@ -3,6 +3,6 @@
   msg_type: "NULL_YEAR"
   msg: "null year"
 - sql: "SELECT Code FROM country where SurfaceArea < Population"
-  id: "{0}"
+  id: "{Code}"
   msg_type: "TOO_SMALL"
   msg: "too small!"

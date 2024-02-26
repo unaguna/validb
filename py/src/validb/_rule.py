@@ -2,8 +2,7 @@ import abc
 import pathlib
 import typing as t
 
-import sqlalchemy
-
+from ._row import Row
 from ._detected import ID, MSG, MSG_TYPE
 
 
@@ -17,7 +16,7 @@ class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
-    def id_of_row(self, row: sqlalchemy.Row[t.Any]) -> ID:
+    def id_of_row(self, row: Row) -> ID:
         """The function to calc the record ID from each row of SQL result.
 
         This ID is used to determine which record in the DB has the abnormality,
@@ -25,7 +24,7 @@ class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
 
         Parameters
         ----------
-        row : sqlalchemy.Row
+        row : Row
             each row of a result of SQL execution
 
         Returns
@@ -49,14 +48,14 @@ class SimpleRule(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
     """validation rule definition"""
 
     _sql: str
-    _id_of_row: t.Callable[[sqlalchemy.Row[t.Any]], ID]
+    _id_of_row: t.Callable[[Row], ID]
     _msg_type: MSG_TYPE
     _msg: MSG
 
     def __init__(
         self,
         sql: str,
-        id_of_row: t.Callable[[sqlalchemy.Row[t.Any]], ID],
+        id_of_row: t.Callable[[Row], ID],
         msg_type: MSG_TYPE,
         msg: MSG,
     ) -> None:
@@ -90,7 +89,7 @@ class SimpleRule(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
     def sql(self) -> str:
         return self._sql
 
-    def id_of_row(self, row: t.Any) -> ID:
+    def id_of_row(self, row: Row) -> ID:
         return self._id_of_row(row)
 
     def detected(self) -> t.Tuple[MSG_TYPE, MSG]:
@@ -134,8 +133,8 @@ class TextRule(Rule[str, str, str]):
     def sql(self) -> str:
         return self._sql
 
-    def id_of_row(self, row: sqlalchemy.Row[t.Any]) -> str:
-        return self._id_template.format(*row)
+    def id_of_row(self, row: Row) -> str:
+        return self._id_template.format(*row.sequence, **row.mapping)
 
     def detected(self) -> t.Tuple[str, str]:
         return self._msg_type, self._msg
