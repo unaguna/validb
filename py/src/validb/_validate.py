@@ -52,8 +52,9 @@ def validate_db(
             sql = text(rule.sql)
             for r in session.execute(sql):
                 row = Row(r)
-                msg_type, msg = rule.detected()
-                detection_data.append(detected(rule.id_of_row(row), msg_type, msg))
+                detection_data.append(
+                    detected(rule.id_of_row(row), rule.msg_type(), rule.message(row))
+                )
     except TooManyDetectionException:
         pass
 

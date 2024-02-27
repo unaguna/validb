@@ -35,11 +35,22 @@ class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
-    def detected(self) -> t.Tuple[MSG_TYPE, MSG]:
-        """Message type and message to be used when an abnormality is detected.
+    def msg_type(self) -> MSG_TYPE:
+        """Message type to be used when an abnormality is detected.
 
         Since the message type is used to distinguish which anomaly was found by which rule,
         it is usually specified as a different value for each rule.
+        """
+        pass
+
+    @abc.abstractmethod
+    def message(self, row: Row) -> MSG:
+        """Message to be used when an abnormality is detected.
+
+        Parameters
+        ----------
+        row : Row
+            each row of a result of SQL execution
         """
         pass
 
@@ -50,14 +61,14 @@ class SimpleRule(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
     _sql: str
     _id_of_row: t.Callable[[Row], ID]
     _msg_type: MSG_TYPE
-    _msg: MSG
+    _msg: t.Callable[[Row], MSG]
 
     def __init__(
         self,
         sql: str,
         id_of_row: t.Callable[[Row], ID],
         msg_type: MSG_TYPE,
-        msg: MSG,
+        msg: t.Callable[[Row], MSG],
     ) -> None:
         """create a validation rule
 
@@ -92,8 +103,11 @@ class SimpleRule(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
     def id_of_row(self, row: Row) -> ID:
         return self._id_of_row(row)
 
-    def detected(self) -> t.Tuple[MSG_TYPE, MSG]:
-        return self._msg_type, self._msg
+    def msg_type(self) -> MSG_TYPE:
+        return self._msg_type
+
+    def message(self, row: Row) -> MSG:
+        return self._msg(row)
 
 
 class TextRule(Rule[str, str, str]):
@@ -136,8 +150,11 @@ class TextRule(Rule[str, str, str]):
     def id_of_row(self, row: Row) -> str:
         return self._id_template.format(*row.sequence, **row.mapping)
 
-    def detected(self) -> t.Tuple[str, str]:
-        return self._msg_type, self._msg
+    def msg_type(self) -> str:
+        return self._msg_type
+
+    def message(self, row: Row) -> str:
+        return self._msg.format(*row.sequence, **row.mapping)
 
 
 class RuleDef(t.TypedDict):
