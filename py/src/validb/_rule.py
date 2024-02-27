@@ -9,6 +9,16 @@ from ._detected import ID, MSG, MSG_TYPE
 class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
     """validation rule definition"""
 
+    @classmethod
+    def create(
+        cls,
+        sql: str,
+        id_of_row: t.Callable[[Row], ID],
+        msg_type: MSG_TYPE,
+        msg: t.Callable[[Row], MSG],
+    ) -> "Rule[ID, MSG_TYPE, MSG]":
+        return _RuleImpl(sql, id_of_row, msg_type, msg)
+
     @property
     @abc.abstractmethod
     def sql(self) -> str:
@@ -55,7 +65,7 @@ class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         pass
 
 
-class SimpleRule(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
+class _RuleImpl(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
     """validation rule definition"""
 
     _sql: str
@@ -110,7 +120,7 @@ class SimpleRule(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
         return self._msg(row)
 
 
-class TextRule(Rule[str, str, str]):
+class SimpleRule(Rule[str, str, str]):
     _sql: str
     _id_template: str
     _msg_type: str
@@ -166,7 +176,7 @@ class RuleDef(t.TypedDict):
 
 def load_rules_from_yaml(
     filepath: t.Union[str, bytes, pathlib.Path]
-) -> t.List[TextRule]:
+) -> t.List[SimpleRule]:
     """Load validation rules from the YAML file.
 
     Parameters
@@ -185,7 +195,7 @@ def load_rules_from_yaml(
         rules: t.List[RuleDef] = yaml.safe_load(fp)
 
     return [
-        TextRule(
+        SimpleRule(
             sql=rule["sql"],
             id_template=rule["id"],
             msg_type=rule["msg_type"],
