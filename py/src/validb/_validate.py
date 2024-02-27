@@ -3,6 +3,7 @@ import typing as t
 from sqlalchemy.orm import Session, scoped_session
 from sqlalchemy.sql import text
 
+from ._row import Row
 from ._detected import Detected, ID, MSG, MSG_TYPE, TextDetected
 from ._rule import Rule
 from ._detectiondata import DetectionData, TooManyDetectionException
@@ -50,8 +51,9 @@ def validate_db(
         for rule in rules:
             sql = text(rule.sql)
             for r in session.execute(sql):
+                row = Row(r)
                 msg_type, msg = rule.detected()
-                detection_data.append(detected(rule.id_of_row(r), msg_type, msg))
+                detection_data.append(detected(rule.id_of_row(row), msg_type, msg))
     except TooManyDetectionException:
         pass
 

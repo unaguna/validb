@@ -32,7 +32,7 @@ rules: t.List[SimpleRule[str, MyMsgType, str]] = [
     ),
     SimpleRule(
         "SELECT Code FROM country where SurfaceArea < Population",
-        lambda r: r[0],
+        lambda r: r["Code"],
         MyMsgType.TOO_SMALL,
         "too small",
     ),
