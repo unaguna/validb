@@ -3,7 +3,7 @@ import os
 import sys
 import typing as t
 
-from validb import Detected, SimpleRule, validate_db
+from validb import Detected, Rule, validate_db
 
 
 class MyMsgType(enum.Enum):
@@ -23,14 +23,14 @@ class MyDetected(Detected[str, MyMsgType, str]):
         return f"<MyDetected: {self.row()}>"
 
 
-rules: t.List[SimpleRule[str, MyMsgType, str]] = [
-    SimpleRule(
+rules: t.List[Rule[str, MyMsgType, str]] = [
+    Rule.create(
         "SELECT Code FROM country where InDepYear is NULL",
         lambda r: r[0],
         MyMsgType.NULL_YEAR,
         lambda r: "null year",
     ),
-    SimpleRule(
+    Rule.create(
         "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population",
         lambda r: r["Code"],
         MyMsgType.TOO_SMALL,
