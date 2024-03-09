@@ -6,6 +6,9 @@ from ._row import Row
 from ._detected import ID, MSG, DETECTION_TYPE
 
 
+DEFAULT_LEVEL = 0
+
+
 class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     """validation rule definition"""
 
@@ -14,10 +17,11 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         cls,
         sql: str,
         id_of_row: t.Callable[[Row], ID],
+        level: int,
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
     ) -> "Rule[ID, DETECTION_TYPE, MSG]":
-        return _RuleImpl(sql, id_of_row, detection_type, msg)
+        return _RuleImpl(sql, id_of_row, level, detection_type, msg)
 
     @property
     @abc.abstractmethod
@@ -43,6 +47,13 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
             the record ID
         """
         pass
+
+    def level(self) -> int:
+        """Level of detection.
+
+        The higher the number, the more serious the detection is treated as.
+        """
+        return DEFAULT_LEVEL
 
     @abc.abstractmethod
     def detection_type(self) -> DETECTION_TYPE:
@@ -70,6 +81,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
 
     _sql: str
     _id_of_row: t.Callable[[Row], ID]
+    _level: int
     _detection_type: DETECTION_TYPE
     _msg: t.Callable[[Row], MSG]
 
@@ -77,6 +89,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         self,
         sql: str,
         id_of_row: t.Callable[[Row], ID],
+        level: int,
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
     ) -> None:
@@ -103,6 +116,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
 
         self._sql = sql
         self._id_of_row = id_of_row
+        self._level = level
         self._detection_type = detection_type
         self._msg = msg
 
@@ -112,6 +126,9 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
 
     def id_of_row(self, row: Row) -> ID:
         return self._id_of_row(row)
+
+    def level(self) -> int:
+        return self._level
 
     def detection_type(self) -> DETECTION_TYPE:
         return self._detection_type
@@ -123,11 +140,12 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
 class SimpleRule(Rule[str, str, str]):
     _sql: str
     _id_template: str
+    _level: int
     _detection_type: str
     _msg: str
 
     def __init__(
-        self, sql: str, id_template: str, detection_type: str, msg: str
+        self, sql: str, id_template: str, level: int, detection_type: str, msg: str
     ) -> None:
         """create a validation rule
 
@@ -141,6 +159,9 @@ class SimpleRule(Rule[str, str, str]):
             the template of a record ID of each row of SQL result;
             This ID is used to determine which record in the DB has the abnormality,
             so the ID is usually created from the primary key.
+        level: int
+            the level of detection;
+            The higher the number, the more serious the detection is treated as.
         detection_type : str
             the type of detection;
             Since this is used to distinguish which anomaly was found by which rule,
@@ -152,6 +173,7 @@ class SimpleRule(Rule[str, str, str]):
 
         self._sql = sql
         self._id_template = id_template
+        self._level = level
         self._detection_type = detection_type
         self._msg = msg
 
@@ -162,6 +184,9 @@ class SimpleRule(Rule[str, str, str]):
     def id_of_row(self, row: Row) -> str:
         return self._id_template.format(*row.sequence, **row.mapping)
 
+    def level(self) -> int:
+        return self._level
+
     def detection_type(self) -> str:
         return self._detection_type
 
@@ -169,11 +194,15 @@ class SimpleRule(Rule[str, str, str]):
         return self._msg.format(*row.sequence, **row.mapping)
 
 
-class RuleDef(t.TypedDict):
+class RuleDefRequired(t.TypedDict):
     sql: str
     id: str
     detection_type: str
     msg: str
+
+
+class RuleDef(RuleDefRequired, total=False):
+    level: int
 
 
 def load_rules_from_yaml(
@@ -200,6 +229,7 @@ def load_rules_from_yaml(
         SimpleRule(
             sql=rule["sql"],
             id_template=rule["id"],
+            level=rule.get("level", DEFAULT_LEVEL),
             detection_type=rule["detection_type"],
             msg=rule["msg"],
         )

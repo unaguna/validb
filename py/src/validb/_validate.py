@@ -11,7 +11,7 @@ from ._detectiondata import DetectionData, TooManyDetectionException
 
 class _DetectedType(t.Protocol, t.Generic[ID, DETECTION_TYPE, MSG]):
     def __call__(
-        self, id: ID, detection_type: DETECTION_TYPE, msg: MSG
+        self, id: ID, level: int, detection_type: DETECTION_TYPE, msg: MSG
     ) -> Detected[ID, DETECTION_TYPE, MSG]: ...
 
 
@@ -54,7 +54,10 @@ def validate_db(
                 row = Row(r)
                 detection_data.append(
                     detected(
-                        rule.id_of_row(row), rule.detection_type(), rule.message(row)
+                        rule.id_of_row(row),
+                        rule.level(),
+                        rule.detection_type(),
+                        rule.message(row),
                     )
                 )
     except TooManyDetectionException:

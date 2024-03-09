@@ -4,5 +4,6 @@
   msg: "null year"
 - sql: "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population"
   id: "{Code}"
+  level: 1
   detection_type: "TOO_SMALL"
   msg: "too small!; SurfaceArea={1}, Population={Population}"

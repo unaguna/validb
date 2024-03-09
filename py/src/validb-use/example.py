@@ -12,9 +12,10 @@ class MyMsgType(enum.Enum):
 
 
 class MyDetected(Detected[str, MyMsgType, str]):
-    def row(self) -> t.Tuple[str, str, str]:
+    def row(self) -> t.Tuple[str, int, str, str]:
         return (
             self.id,
+            self.level,
             self.detection_type.value,
             self.msg,
         )
@@ -27,12 +28,14 @@ rules: t.List[Rule[str, MyMsgType, str]] = [
     Rule.create(
         "SELECT Code FROM country where InDepYear is NULL",
         lambda r: r[0],
+        0,
         MyMsgType.NULL_YEAR,
         lambda r: "null year",
     ),
     Rule.create(
         "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population",
         lambda r: r["Code"],
+        1,
         MyMsgType.TOO_SMALL,
         lambda r: f"too small; SurfaceArea={r[1]}, Population={r['Population']}",
     ),
@@ -61,6 +64,15 @@ if __name__ == "__main__":
     # Outputs a summary of anomalies per detection type
     for detection_type in detection_data.detection_types():
         print(detection_data[detection_type])
+
+    print("")
+    print("")
+    print("")
+    print("")
+
+    # Outputs a summary of anomalies per detection type
+    for level, detection_type in detection_data.levels_detection_types():
+        print(detection_data[(level, detection_type)])
 
     # Outputs anomalies as CSV
     spamwriter = csv.writer(sys.stdout)
