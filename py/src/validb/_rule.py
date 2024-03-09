@@ -262,9 +262,6 @@ def load_rules_from_yaml(
             **{key: value for key, value in embedder_init.items() if key != "class"}
         )
 
-        if not isinstance(embedder, Embedder):
-            raise TypeError(f"embedder must be instance of {Embedder.__name__}")
-
         embedders[embedder_name] = embedder
 
     return [
@@ -280,7 +277,7 @@ def load_rules_from_yaml(
     ]
 
 
-def _import_embedder(path: t.Any) -> t.Type[t.Any]:
+def _import_embedder(path: t.Any) -> t.Type[Embedder]:
     if not isinstance(path, str):
         raise ValueError("embedders.*.class must be a string like 'module.class'")
 
@@ -292,7 +289,12 @@ def _import_embedder(path: t.Any) -> t.Type[t.Any]:
     embedder_class_name = embedder_path[-1]
     embedder_module = importlib.import_module(embedder_module_str)
 
-    return getattr(embedder_module, embedder_class_name)
+    embedder_class = getattr(embedder_module, embedder_class_name)
+
+    if not issubclass(embedder_class, Embedder):
+        raise TypeError(f"embedder must be instance of {Embedder.__name__}")
+
+    return embedder_class
 
 
 def _construct_embedders(
