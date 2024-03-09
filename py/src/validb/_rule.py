@@ -2,6 +2,7 @@ import abc
 import pathlib
 import typing as t
 
+from ._embedder import Embedder
 from ._row import Row
 from ._detected import ID, MSG, DETECTION_TYPE
 
@@ -20,8 +21,11 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         level: int,
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
+        embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> "Rule[ID, DETECTION_TYPE, MSG]":
-        return _RuleImpl(sql, id_of_row, level, detection_type, msg)
+        return _RuleImpl(
+            sql, id_of_row, level, detection_type, msg, embedders=embedders
+        )
 
     @property
     @abc.abstractmethod
@@ -84,6 +88,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
     _level: int
     _detection_type: DETECTION_TYPE
     _msg: t.Callable[[Row], MSG]
+    _embedders: t.Sequence[Embedder]
 
     def __init__(
         self,
@@ -92,6 +97,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         level: int,
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
+        embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
         """create a validation rule
 
@@ -111,6 +117,9 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
             it is usually specified as a different value for each rule.
         msg : MSG
             the message of detection
+        embedders: Sequence[Embedder]
+            Generator of embedding variables to be used when creating messages.
+            If not specified, only fields obtained by SQL can be embedded.
         """
         super().__init__()
 
@@ -119,6 +128,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         self._level = level
         self._detection_type = detection_type
         self._msg = msg
+        self._embedders = embedders if embedders is not None else []
 
     @property
     def sql(self) -> str:
@@ -134,7 +144,13 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         return self._detection_type
 
     def message(self, row: Row) -> MSG:
-        return self._msg(row)
+        vars = row.sequence
+        kw_vars = row.mapping
+
+        for embedder in self._embedders:
+            kw_vars = embedder.extend(vars, kw_vars)
+
+        return self._msg(Row(vars, kw_vars))
 
 
 class SimpleRule(Rule[str, str, str]):

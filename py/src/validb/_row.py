@@ -4,12 +4,19 @@ import sqlalchemy
 
 
 class Row:
-    _row: sqlalchemy.Row[t.Any]
+    _row: t.Sequence[t.Any]
     _row_mapping: t.Mapping[str, t.Any]
 
-    def __init__(self, row: sqlalchemy.Row[t.Any]) -> None:
-        self._row = row
-        self._row_mapping = row._mapping  # type: ignore
+    def __init__(self, seq: t.Sequence[t.Any], mapping: t.Mapping[str, t.Any]):
+        self._row = seq
+        self._row_mapping = mapping
+
+    @classmethod
+    def from_sqlalchemy(cls, row: sqlalchemy.Row[t.Any]) -> "Row":
+        return Row(
+            row,
+            row._mapping,  # type: ignore
+        )
 
     def __len__(self) -> int:
         return len(self._row)
