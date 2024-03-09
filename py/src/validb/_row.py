@@ -2,6 +2,8 @@ import typing as t
 
 import sqlalchemy
 
+from ._embedder import Embedder
+
 
 class Row:
     _row: t.Sequence[t.Any]
@@ -34,3 +36,27 @@ class Row:
     @property
     def mapping(self) -> t.Mapping[str, t.Any]:
         return self._row_mapping
+
+    def extended(self, embedder: t.Union[t.Sequence[Embedder], Embedder]) -> "Row":
+        """Returns a Row extended by applying the specified variable generators.
+
+        This method is non-destructive and creates a new instance that is different from self.
+
+        Parameters
+        ----------
+        embedder : Sequence[Embedder] | Embedder
+            variable generators
+
+        Returns
+        -------
+        Row
+            a Row extended by applying the specified variable generators
+        """
+        if not isinstance(embedder, t.Sequence):
+            return self.extended([embedder])
+
+        current_kw_vars = self.mapping
+        for em in embedder:
+            current_kw_vars = em.extend(self.sequence, current_kw_vars)
+
+        return Row(self.sequence, current_kw_vars)

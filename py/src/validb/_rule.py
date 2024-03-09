@@ -144,13 +144,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         return self._detection_type
 
     def message(self, row: Row) -> MSG:
-        vars = row.sequence
-        kw_vars = row.mapping
-
-        for embedder in self._embedders:
-            kw_vars = embedder.extend(vars, kw_vars)
-
-        return self._msg(Row(vars, kw_vars))
+        return self._msg(row.extended(self._embedders))
 
 
 class SimpleRule(Rule[str, str, str]):
