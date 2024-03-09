@@ -1,7 +1,9 @@
 import abc
+import importlib
 import pathlib
 import typing as t
 
+from ._embedder import Embedder
 from ._row import Row
 from ._detected import ID, MSG, DETECTION_TYPE
 
@@ -20,8 +22,11 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         level: int,
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
+        embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> "Rule[ID, DETECTION_TYPE, MSG]":
-        return _RuleImpl(sql, id_of_row, level, detection_type, msg)
+        return _RuleImpl(
+            sql, id_of_row, level, detection_type, msg, embedders=embedders
+        )
 
     @property
     @abc.abstractmethod
@@ -84,6 +89,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
     _level: int
     _detection_type: DETECTION_TYPE
     _msg: t.Callable[[Row], MSG]
+    _embedders: t.Sequence[Embedder]
 
     def __init__(
         self,
@@ -92,6 +98,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         level: int,
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
+        embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
         """create a validation rule
 
@@ -111,6 +118,9 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
             it is usually specified as a different value for each rule.
         msg : MSG
             the message of detection
+        embedders: Sequence[Embedder]
+            Generator of embedding variables to be used when creating messages.
+            If not specified, only fields obtained by SQL can be embedded.
         """
         super().__init__()
 
@@ -119,6 +129,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         self._level = level
         self._detection_type = detection_type
         self._msg = msg
+        self._embedders = embedders if embedders is not None else []
 
     @property
     def sql(self) -> str:
@@ -134,7 +145,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         return self._detection_type
 
     def message(self, row: Row) -> MSG:
-        return self._msg(row)
+        return self._msg(row.extended(self._embedders))
 
 
 class SimpleRule(Rule[str, str, str]):
@@ -143,9 +154,16 @@ class SimpleRule(Rule[str, str, str]):
     _level: int
     _detection_type: str
     _msg: str
+    _embedders: t.Sequence[Embedder]
 
     def __init__(
-        self, sql: str, id_template: str, level: int, detection_type: str, msg: str
+        self,
+        sql: str,
+        id_template: str,
+        level: int,
+        detection_type: str,
+        msg: str,
+        embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
         """create a validation rule
 
@@ -168,6 +186,9 @@ class SimpleRule(Rule[str, str, str]):
             it is usually specified as a different value for each rule.
         msg : MSG
             the message of detection
+        embedders: Sequence[Embedder]
+            Generator of embedding variables to be used when creating messages.
+            If not specified, only fields obtained by SQL can be embedded.
         """
         super().__init__()
 
@@ -176,6 +197,7 @@ class SimpleRule(Rule[str, str, str]):
         self._level = level
         self._detection_type = detection_type
         self._msg = msg
+        self._embedders = embedders if embedders is not None else []
 
     @property
     def sql(self) -> str:
@@ -191,7 +213,8 @@ class SimpleRule(Rule[str, str, str]):
         return self._detection_type
 
     def message(self, row: Row) -> str:
-        return self._msg.format(*row.sequence, **row.mapping)
+        final_row = row.extended(self._embedders)
+        return self._msg.format(*final_row.sequence, **final_row.mapping)
 
 
 class RuleDefRequired(t.TypedDict):
@@ -203,6 +226,12 @@ class RuleDefRequired(t.TypedDict):
 
 class RuleDef(RuleDefRequired, total=False):
     level: int
+    embedders: t.List[str]
+
+
+class RulesFile(t.TypedDict):
+    rules: t.Sequence[RuleDef]
+    embedders: t.Mapping[str, t.Any]
 
 
 def load_rules_from_yaml(
@@ -223,7 +252,12 @@ def load_rules_from_yaml(
     import yaml
 
     with open(filepath, mode="r") as fp:
-        rules: t.List[RuleDef] = yaml.safe_load(fp)
+        rules: RulesFile = yaml.safe_load(fp)
+
+    embedders: t.MutableMapping[str, Embedder] = {
+        embedder_name: _construct_embedder(embedder_attr)
+        for embedder_name, embedder_attr in rules["embedders"].items()
+    }
 
     return [
         SimpleRule(
@@ -232,6 +266,44 @@ def load_rules_from_yaml(
             level=rule.get("level", DEFAULT_LEVEL),
             detection_type=rule["detection_type"],
             msg=rule["msg"],
+            embedders=_construct_embedders(rule.get("embedders"), embedders),
         )
-        for rule in rules
+        for rule in rules["rules"]
     ]
+
+
+def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
+    embedder_class = _import_embedder(embedder_attr["class"])
+    embedder = embedder_class(
+        **{key: value for key, value in embedder_attr.items() if key != "class"}
+    )
+    return embedder
+
+
+def _import_embedder(path: t.Any) -> t.Type[Embedder]:
+    if not isinstance(path, str):
+        raise ValueError("embedders.*.class must be a string like 'module.class'")
+
+    embedder_path = path.split(".")
+    if len(embedder_path) < 2:
+        raise ValueError("embedders.*.class must be a string like 'module.class'")
+
+    embedder_module_str = ".".join(embedder_path[:-1])
+    embedder_class_name = embedder_path[-1]
+    embedder_module = importlib.import_module(embedder_module_str)
+
+    embedder_class = getattr(embedder_module, embedder_class_name)
+
+    if not issubclass(embedder_class, Embedder):
+        raise TypeError(f"embedder must be instance of {Embedder.__name__}")
+
+    return embedder_class
+
+
+def _construct_embedders(
+    embedders: t.Optional[t.Sequence[str]], embedder_instances: t.Mapping[str, Embedder]
+) -> t.Optional[t.Sequence[Embedder]]:
+    if embedders is None:
+        return None
+
+    return [embedder_instances[embedder_name] for embedder_name in embedders]

@@ -51,7 +51,7 @@ def validate_db(
         for rule in rules:
             sql = text(rule.sql)
             for r in session.execute(sql):
-                row = Row(r)
+                row = Row.from_sqlalchemy(r)
                 detection_data.append(
                     detected(
                         rule.id_of_row(row),

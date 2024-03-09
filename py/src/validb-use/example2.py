@@ -10,6 +10,9 @@ if __name__ == "__main__":
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
 
+    # allow to import custom classes
+    sys.path.append(os.path.join(os.path.dirname(__file__), "pythonpath"))
+
     rules = load_rules_from_yaml(os.path.join(os.path.dirname(__file__), "rules.yml"))
 
     engine = create_engine(os.environ["DEV_DB_URL"])

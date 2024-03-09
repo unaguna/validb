@@ -1,9 +1,10 @@
+import datetime as dt
 import enum
 import os
 import sys
 import typing as t
 
-from validb import Detected, Rule, validate_db
+from validb import Detected, Embedder, Rule, validate_db
 
 
 class MyMsgType(enum.Enum):
@@ -24,13 +25,21 @@ class MyDetected(Detected[str, MyMsgType, str]):
         return f"<MyDetected: {self.row()}>"
 
 
+class MyEmbedder(Embedder):
+    def extend(
+        self, vars: t.Sequence[t.Any], kw_vars: t.Mapping[str, t.Any]
+    ) -> t.Mapping[str, t.Any]:
+        return {**kw_vars, "today": dt.date.today()}
+
+
 rules: t.List[Rule[str, MyMsgType, str]] = [
     Rule.create(
         "SELECT Code FROM country where InDepYear is NULL",
         lambda r: r[0],
         0,
         MyMsgType.NULL_YEAR,
-        lambda r: "null year",
+        lambda r: f"null year; today={r['today']}",
+        embedders=[MyEmbedder()],
     ),
     Rule.create(
         "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population",
