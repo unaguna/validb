@@ -1,4 +1,5 @@
 import abc
+import importlib
 import pathlib
 import typing as t
 
@@ -153,9 +154,16 @@ class SimpleRule(Rule[str, str, str]):
     _level: int
     _detection_type: str
     _msg: str
+    _embedders: t.Sequence[Embedder]
 
     def __init__(
-        self, sql: str, id_template: str, level: int, detection_type: str, msg: str
+        self,
+        sql: str,
+        id_template: str,
+        level: int,
+        detection_type: str,
+        msg: str,
+        embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
         """create a validation rule
 
@@ -178,6 +186,9 @@ class SimpleRule(Rule[str, str, str]):
             it is usually specified as a different value for each rule.
         msg : MSG
             the message of detection
+        embedders: Sequence[Embedder]
+            Generator of embedding variables to be used when creating messages.
+            If not specified, only fields obtained by SQL can be embedded.
         """
         super().__init__()
 
@@ -186,6 +197,7 @@ class SimpleRule(Rule[str, str, str]):
         self._level = level
         self._detection_type = detection_type
         self._msg = msg
+        self._embedders = embedders if embedders is not None else []
 
     @property
     def sql(self) -> str:
@@ -201,7 +213,8 @@ class SimpleRule(Rule[str, str, str]):
         return self._detection_type
 
     def message(self, row: Row) -> str:
-        return self._msg.format(*row.sequence, **row.mapping)
+        final_row = row.extended(self._embedders)
+        return self._msg.format(*final_row.sequence, **final_row.mapping)
 
 
 class RuleDefRequired(t.TypedDict):
@@ -213,10 +226,12 @@ class RuleDefRequired(t.TypedDict):
 
 class RuleDef(RuleDefRequired, total=False):
     level: int
+    embedders: t.List[str]
 
 
 class RulesFile(t.TypedDict):
     rules: t.Sequence[RuleDef]
+    embedders: t.Mapping[str, t.Any]
 
 
 def load_rules_from_yaml(
@@ -239,6 +254,28 @@ def load_rules_from_yaml(
     with open(filepath, mode="r") as fp:
         rules: RulesFile = yaml.safe_load(fp)
 
+    embedders: t.MutableMapping[str, Embedder] = {}
+
+    for embedder_name, embedder_init in rules["embedders"].items():
+        embedder_path_str = embedder_init["class"]
+        if not isinstance(embedder_path_str, str):
+            raise ValueError("embedders.*.class must be a string like 'module.class'")
+
+        embedder_path = embedder_path_str.split(".")
+        if len(embedder_path) < 2:
+            raise ValueError("embedders.*.class must be a string like 'module.class'")
+
+        embedder_module_str = ".".join(embedder_path[:-1])
+        embedder_class_name = embedder_path[-1]
+        embedder_module = importlib.import_module(embedder_module_str)
+
+        embedder_class = getattr(embedder_module, embedder_class_name)
+        embedder = embedder_class(
+            **{key: value for key, value in embedder_init.items() if key != "class"}
+        )
+
+        embedders[embedder_name] = embedder
+
     return [
         SimpleRule(
             sql=rule["sql"],
@@ -246,6 +283,16 @@ def load_rules_from_yaml(
             level=rule.get("level", DEFAULT_LEVEL),
             detection_type=rule["detection_type"],
             msg=rule["msg"],
+            embedders=_construct_embedders(rule.get("embedders"), embedders),
         )
         for rule in rules["rules"]
     ]
+
+
+def _construct_embedders(
+    embedders: t.Optional[t.Sequence[str]], embedder_instances: t.Mapping[str, Embedder]
+) -> t.Optional[t.Sequence[Embedder]]:
+    if embedders is None:
+        return None
+
+    return [embedder_instances[embedder_name] for embedder_name in embedders]
