@@ -30,6 +30,9 @@ class DetectionData(t.Generic[ID, DETECTION_TYPE, MSG]):
     _by_detection_type: t.MutableMapping[
         DETECTION_TYPE, t.List[Detected[ID, DETECTION_TYPE, MSG]]
     ]
+    _by_level_detection_type: t.MutableMapping[
+        int, t.MutableMapping[DETECTION_TYPE, t.List[Detected[ID, DETECTION_TYPE, MSG]]]
+    ]
 
     def __init__(self, max_detection: t.Optional[int]) -> None:
         """Initialize object
@@ -45,6 +48,7 @@ class DetectionData(t.Generic[ID, DETECTION_TYPE, MSG]):
         self._too_many_detection_flag = False
         self._by_id = defaultdict(lambda: [])
         self._by_detection_type = defaultdict(lambda: [])
+        self._by_level_detection_type = defaultdict(lambda: defaultdict(lambda: []))
 
     def append(self, detected: Detected[ID, DETECTION_TYPE, MSG]):
         """append a detected anomaly
@@ -68,6 +72,9 @@ class DetectionData(t.Generic[ID, DETECTION_TYPE, MSG]):
 
         self._by_id[detected.id].append(detected)
         self._by_detection_type[detected.detection_type].append(detected)
+        self._by_level_detection_type[detected.level][detected.detection_type].append(
+            detected
+        )
 
     def ids(self) -> t.Iterable[ID]:
         """create the iterator of IDs of records for which anomalies were detected.
@@ -84,6 +91,17 @@ class DetectionData(t.Generic[ID, DETECTION_TYPE, MSG]):
     def detection_types(self) -> t.Iterable[DETECTION_TYPE]:
         """create the iterator of detection types for which anomalies were detected."""
         return self._by_detection_type.keys()
+
+    def levels_detection_types(self) -> t.Iterable[t.Tuple[int, DETECTION_TYPE]]:
+        """create the iterator of tupels of levels and detection types for which anomalies were detected.
+
+        It will be sorted by level.
+        """
+        return (
+            (level, detection_type)
+            for level in sorted(self._by_level_detection_type.keys(), reverse=True)
+            for detection_type in self._by_level_detection_type[level].keys()
+        )
 
     @property
     def count(self) -> int:
@@ -102,10 +120,19 @@ class DetectionData(t.Generic[ID, DETECTION_TYPE, MSG]):
     def __getitem__(self, key: t.Any) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
         if key in self._by_id:
             return self._by_id[key]
-        elif key in self._by_detection_type:
+        if key in self._by_detection_type:
             return self._by_detection_type[key]
-        else:
-            raise KeyError(key)
+
+        if isinstance(key, t.Sized) and len(key) == 2 and isinstance(key, t.Sequence):
+            key_level: t.Any = key[0]
+            key_dt_type: t.Any = key[1]
+
+            if key_level in self._by_level_detection_type:
+                of_level_by_detection_type = self._by_level_detection_type[key_level]
+                if key_dt_type in of_level_by_detection_type:
+                    return self._by_level_detection_type[key_level][key_dt_type]
+
+        raise KeyError(key)  # type: ignore
 
     def values(self) -> t.Generator[Detected[ID, DETECTION_TYPE, MSG], None, None]:
         """create the iterator of detection"""

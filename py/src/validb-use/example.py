@@ -65,6 +65,15 @@ if __name__ == "__main__":
     for detection_type in detection_data.detection_types():
         print(detection_data[detection_type])
 
+    print("")
+    print("")
+    print("")
+    print("")
+
+    # Outputs a summary of anomalies per detection type
+    for level, detection_type in detection_data.levels_detection_types():
+        print(detection_data[(level, detection_type)])
+
     # Outputs anomalies as CSV
     spamwriter = csv.writer(sys.stdout)
     spamwriter.writerows(detection_data.rows())
