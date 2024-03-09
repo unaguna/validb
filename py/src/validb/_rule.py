@@ -254,10 +254,10 @@ def load_rules_from_yaml(
     with open(filepath, mode="r") as fp:
         rules: RulesFile = yaml.safe_load(fp)
 
-    embedders: t.MutableMapping[str, Embedder] = {}
-
-    for embedder_name, embedder_init in rules["embedders"].items():
-        embedders[embedder_name] = _construct_embedder(embedder_init)
+    embedders: t.MutableMapping[str, Embedder] = {
+        embedder_name: _construct_embedder(embedder_init)
+        for embedder_name, embedder_init in rules["embedders"].items()
+    }
 
     return [
         SimpleRule(
