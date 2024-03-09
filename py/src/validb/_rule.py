@@ -255,8 +255,8 @@ def load_rules_from_yaml(
         rules: RulesFile = yaml.safe_load(fp)
 
     embedders: t.MutableMapping[str, Embedder] = {
-        embedder_name: _construct_embedder(embedder_init)
-        for embedder_name, embedder_init in rules["embedders"].items()
+        embedder_name: _construct_embedder(embedder_attr)
+        for embedder_name, embedder_attr in rules["embedders"].items()
     }
 
     return [
@@ -272,10 +272,10 @@ def load_rules_from_yaml(
     ]
 
 
-def _construct_embedder(embedder_init: t.Mapping[str, t.Any]) -> Embedder:
-    embedder_class = _import_embedder(embedder_init["class"])
+def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
+    embedder_class = _import_embedder(embedder_attr["class"])
     embedder = embedder_class(
-        **{key: value for key, value in embedder_init.items() if key != "class"}
+        **{key: value for key, value in embedder_attr.items() if key != "class"}
     )
     return embedder
 
