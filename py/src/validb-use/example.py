@@ -15,7 +15,7 @@ class MyDetected(Detected[str, MyMsgType, str]):
     def row(self) -> t.Tuple[str, str, str]:
         return (
             self.id,
-            self.msg_type.value,
+            self.detection_type.value,
             self.msg,
         )
 
@@ -58,9 +58,9 @@ if __name__ == "__main__":
     for id in detection_data.ids():
         print(detection_data[id])
 
-    # Outputs a summary of anomalies per message type
-    for msg_type in detection_data.msg_types():
-        print(detection_data[msg_type])
+    # Outputs a summary of anomalies per detection type
+    for detection_type in detection_data.detection_types():
+        print(detection_data[detection_type])
 
     # Outputs anomalies as CSV
     spamwriter = csv.writer(sys.stdout)

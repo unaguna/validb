@@ -3,10 +3,10 @@ import pathlib
 import typing as t
 
 from ._row import Row
-from ._detected import ID, MSG, MSG_TYPE
+from ._detected import ID, MSG, DETECTION_TYPE
 
 
-class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
+class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     """validation rule definition"""
 
     @classmethod
@@ -14,10 +14,10 @@ class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         cls,
         sql: str,
         id_of_row: t.Callable[[Row], ID],
-        msg_type: MSG_TYPE,
+        detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
-    ) -> "Rule[ID, MSG_TYPE, MSG]":
-        return _RuleImpl(sql, id_of_row, msg_type, msg)
+    ) -> "Rule[ID, DETECTION_TYPE, MSG]":
+        return _RuleImpl(sql, id_of_row, detection_type, msg)
 
     @property
     @abc.abstractmethod
@@ -45,10 +45,10 @@ class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
-    def msg_type(self) -> MSG_TYPE:
-        """Message type to be used when an abnormality is detected.
+    def detection_type(self) -> DETECTION_TYPE:
+        """Detection type to be used when an abnormality is detected.
 
-        Since the message type is used to distinguish which anomaly was found by which rule,
+        Since the detection type is used to distinguish which anomaly was found by which rule,
         it is usually specified as a different value for each rule.
         """
         pass
@@ -65,19 +65,19 @@ class Rule(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         pass
 
 
-class _RuleImpl(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
+class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG]):
     """validation rule definition"""
 
     _sql: str
     _id_of_row: t.Callable[[Row], ID]
-    _msg_type: MSG_TYPE
+    _detection_type: DETECTION_TYPE
     _msg: t.Callable[[Row], MSG]
 
     def __init__(
         self,
         sql: str,
         id_of_row: t.Callable[[Row], ID],
-        msg_type: MSG_TYPE,
+        detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
     ) -> None:
         """create a validation rule
@@ -92,8 +92,8 @@ class _RuleImpl(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
             the function to calc the record ID from each row of SQL result;
             This ID is used to determine which record in the DB has the abnormality,
             so the ID is usually created from the primary key.
-        msg_type : MSG_TYPE
-            the type of message;
+        detection_type : DETECTION_TYPE
+            the type of detection;
             Since this is used to distinguish which anomaly was found by which rule,
             it is usually specified as a different value for each rule.
         msg : MSG
@@ -103,7 +103,7 @@ class _RuleImpl(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
 
         self._sql = sql
         self._id_of_row = id_of_row
-        self._msg_type = msg_type
+        self._detection_type = detection_type
         self._msg = msg
 
     @property
@@ -113,8 +113,8 @@ class _RuleImpl(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
     def id_of_row(self, row: Row) -> ID:
         return self._id_of_row(row)
 
-    def msg_type(self) -> MSG_TYPE:
-        return self._msg_type
+    def detection_type(self) -> DETECTION_TYPE:
+        return self._detection_type
 
     def message(self, row: Row) -> MSG:
         return self._msg(row)
@@ -123,10 +123,12 @@ class _RuleImpl(t.Generic[ID, MSG_TYPE, MSG], Rule[ID, MSG_TYPE, MSG]):
 class SimpleRule(Rule[str, str, str]):
     _sql: str
     _id_template: str
-    _msg_type: str
+    _detection_type: str
     _msg: str
 
-    def __init__(self, sql: str, id_template: str, msg_type: str, msg: str) -> None:
+    def __init__(
+        self, sql: str, id_template: str, detection_type: str, msg: str
+    ) -> None:
         """create a validation rule
 
         The created rules are used as arguments to `validate_db()`.
@@ -139,8 +141,8 @@ class SimpleRule(Rule[str, str, str]):
             the template of a record ID of each row of SQL result;
             This ID is used to determine which record in the DB has the abnormality,
             so the ID is usually created from the primary key.
-        msg_type : MSG_TYPE
-            the type of message;
+        detection_type : str
+            the type of detection;
             Since this is used to distinguish which anomaly was found by which rule,
             it is usually specified as a different value for each rule.
         msg : MSG
@@ -150,7 +152,7 @@ class SimpleRule(Rule[str, str, str]):
 
         self._sql = sql
         self._id_template = id_template
-        self._msg_type = msg_type
+        self._detection_type = detection_type
         self._msg = msg
 
     @property
@@ -160,8 +162,8 @@ class SimpleRule(Rule[str, str, str]):
     def id_of_row(self, row: Row) -> str:
         return self._id_template.format(*row.sequence, **row.mapping)
 
-    def msg_type(self) -> str:
-        return self._msg_type
+    def detection_type(self) -> str:
+        return self._detection_type
 
     def message(self, row: Row) -> str:
         return self._msg.format(*row.sequence, **row.mapping)
@@ -170,7 +172,7 @@ class SimpleRule(Rule[str, str, str]):
 class RuleDef(t.TypedDict):
     sql: str
     id: str
-    msg_type: str
+    detection_type: str
     msg: str
 
 
@@ -198,7 +200,7 @@ def load_rules_from_yaml(
         SimpleRule(
             sql=rule["sql"],
             id_template=rule["id"],
-            msg_type=rule["msg_type"],
+            detection_type=rule["detection_type"],
             msg=rule["msg"],
         )
         for rule in rules
