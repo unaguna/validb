@@ -3,18 +3,18 @@ import typing as t
 
 
 ID = t.TypeVar("ID")
-MSG_TYPE = t.TypeVar("MSG_TYPE")
+DETECTION_TYPE = t.TypeVar("DETECTION_TYPE")
 MSG = t.TypeVar("MSG")
 
 
-class Detected(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
+class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     """detected anomaly"""
 
     _id: ID
-    _msg_type: MSG_TYPE
+    _detection_type: DETECTION_TYPE
     _msg: MSG
 
-    def __init__(self, id: ID, msg_type: MSG_TYPE, msg: MSG) -> None:
+    def __init__(self, id: ID, detection_type: DETECTION_TYPE, msg: MSG) -> None:
         """create detection object
 
         Parameters
@@ -22,13 +22,13 @@ class Detected(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         id : ID
             The record ID of the record for which the abnormality was detected.
             Normally, record IDs are determined according to predefined rules.
-        msg_type : MSG_TYPE
+        detection_type : DETECTION_TYPE
             Type of anomaly detected.
         msg : MSG
             The message.
         """
         self._id = id
-        self._msg_type = msg_type
+        self._detection_type = detection_type
         self._msg = msg
 
     @property
@@ -37,9 +37,9 @@ class Detected(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         return self._id
 
     @property
-    def msg_type(self) -> MSG_TYPE:
+    def detection_type(self) -> DETECTION_TYPE:
         """Type of anomaly detected."""
-        return self._msg_type
+        return self._detection_type
 
     @property
     def msg(self) -> MSG:
@@ -55,7 +55,7 @@ class TextDetected(Detected[str, str, str]):
     def row(self) -> t.Tuple[str, str, str]:
         return (
             self.id,
-            self.msg_type,
+            self.detection_type,
             self.msg,
         )
 
