@@ -1,8 +1,14 @@
+import abc
 import typing as t
 
 import sqlalchemy
 
-from ._embedder import Embedder
+
+class RowExtender(abc.ABC):
+    @abc.abstractmethod
+    def extend(
+        self, vars: t.Sequence[t.Any], kw_vars: t.Mapping[str, t.Any]
+    ) -> t.Mapping[str, t.Any]: ...
 
 
 class Row:
@@ -37,26 +43,28 @@ class Row:
     def mapping(self) -> t.Mapping[str, t.Any]:
         return self._row_mapping
 
-    def extended(self, embedder: t.Union[t.Sequence[Embedder], Embedder]) -> "Row":
-        """Returns a Row extended by applying the specified variable generators.
+    def extended(
+        self, extender: t.Union[t.Sequence[RowExtender], RowExtender]
+    ) -> "Row":
+        """Returns a Row extended by applying the specified extenders.
 
         This method is non-destructive and creates a new instance that is different from self.
 
         Parameters
         ----------
-        embedder : Sequence[Embedder] | Embedder
-            variable generators
+        extender : Sequence[RowExtender] | RowExtender
+            extenders
 
         Returns
         -------
         Row
-            a Row extended by applying the specified variable generators
+            a Row extended by applying the specified extenders
         """
-        if not isinstance(embedder, t.Sequence):
-            return self.extended([embedder])
+        if not isinstance(extender, t.Sequence):
+            return self.extended([extender])
 
         current_kw_vars = self.mapping
-        for em in embedder:
-            current_kw_vars = em.extend(self.sequence, current_kw_vars)
+        for ex in extender:
+            current_kw_vars = ex.extend(self.sequence, current_kw_vars)
 
         return Row(self.sequence, current_kw_vars)
