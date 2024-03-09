@@ -12,9 +12,10 @@ class MyMsgType(enum.Enum):
 
 
 class MyDetected(Detected[str, MyMsgType, str]):
-    def row(self) -> t.Tuple[str, str, str]:
+    def row(self) -> t.Tuple[str, int, str, str]:
         return (
             self.id,
+            self.level,
             self.detection_type.value,
             self.msg,
         )
