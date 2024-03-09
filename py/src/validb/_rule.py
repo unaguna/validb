@@ -173,6 +173,7 @@ class SimpleRule(Rule[str, str, str]):
 
         self._sql = sql
         self._id_template = id_template
+        self._level = level
         self._detection_type = detection_type
         self._msg = msg
 
