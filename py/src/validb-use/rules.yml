@@ -1,9 +1,10 @@
-- sql: "SELECT Code FROM country where InDepYear is NULL"
-  id: "{0}"
-  detection_type: "NULL_YEAR"
-  msg: "null year"
-- sql: "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population"
-  id: "{Code}"
-  level: 1
-  detection_type: "TOO_SMALL"
-  msg: "too small!; SurfaceArea={1}, Population={Population}"
+rules:
+  - sql: "SELECT Code FROM country where InDepYear is NULL"
+    id: "{0}"
+    detection_type: "NULL_YEAR"
+    msg: "null year"
+  - sql: "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population"
+    id: "{Code}"
+    level: 1
+    detection_type: "TOO_SMALL"
+    msg: "too small!; SurfaceArea={1}, Population={Population}"

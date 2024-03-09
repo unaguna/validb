@@ -205,6 +205,10 @@ class RuleDef(RuleDefRequired, total=False):
     level: int
 
 
+class RulesFile(t.TypedDict):
+    rules: t.Sequence[RuleDef]
+
+
 def load_rules_from_yaml(
     filepath: t.Union[str, bytes, pathlib.Path]
 ) -> t.List[SimpleRule]:
@@ -223,7 +227,7 @@ def load_rules_from_yaml(
     import yaml
 
     with open(filepath, mode="r") as fp:
-        rules: t.List[RuleDef] = yaml.safe_load(fp)
+        rules: RulesFile = yaml.safe_load(fp)
 
     return [
         SimpleRule(
@@ -233,5 +237,5 @@ def load_rules_from_yaml(
             detection_type=rule["detection_type"],
             msg=rule["msg"],
         )
-        for rule in rules
+        for rule in rules["rules"]
     ]
