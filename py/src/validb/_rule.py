@@ -257,22 +257,13 @@ def load_rules_from_yaml(
     embedders: t.MutableMapping[str, Embedder] = {}
 
     for embedder_name, embedder_init in rules["embedders"].items():
-        embedder_path_str = embedder_init["class"]
-        if not isinstance(embedder_path_str, str):
-            raise ValueError("embedders.*.class must be a string like 'module.class'")
-
-        embedder_path = embedder_path_str.split(".")
-        if len(embedder_path) < 2:
-            raise ValueError("embedders.*.class must be a string like 'module.class'")
-
-        embedder_module_str = ".".join(embedder_path[:-1])
-        embedder_class_name = embedder_path[-1]
-        embedder_module = importlib.import_module(embedder_module_str)
-
-        embedder_class = getattr(embedder_module, embedder_class_name)
+        embedder_class = _import_embedder(embedder_init["class"])
         embedder = embedder_class(
             **{key: value for key, value in embedder_init.items() if key != "class"}
         )
+
+        if not isinstance(embedder, Embedder):
+            raise TypeError(f"embedder must be instance of {Embedder.__name__}")
 
         embedders[embedder_name] = embedder
 
@@ -287,6 +278,21 @@ def load_rules_from_yaml(
         )
         for rule in rules["rules"]
     ]
+
+
+def _import_embedder(path: t.Any) -> t.Type[t.Any]:
+    if not isinstance(path, str):
+        raise ValueError("embedders.*.class must be a string like 'module.class'")
+
+    embedder_path = path.split(".")
+    if len(embedder_path) < 2:
+        raise ValueError("embedders.*.class must be a string like 'module.class'")
+
+    embedder_module_str = ".".join(embedder_path[:-1])
+    embedder_class_name = embedder_path[-1]
+    embedder_module = importlib.import_module(embedder_module_str)
+
+    return getattr(embedder_module, embedder_class_name)
 
 
 def _construct_embedders(
