@@ -27,12 +27,14 @@ rules: t.List[Rule[str, MyMsgType, str]] = [
     Rule.create(
         "SELECT Code FROM country where InDepYear is NULL",
         lambda r: r[0],
+        0,
         MyMsgType.NULL_YEAR,
         lambda r: "null year",
     ),
     Rule.create(
         "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population",
         lambda r: r["Code"],
+        1,
         MyMsgType.TOO_SMALL,
         lambda r: f"too small; SurfaceArea={r[1]}, Population={r['Population']}",
     ),
