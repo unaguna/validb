@@ -5,25 +5,7 @@ import typing as t
 from ..datasources import DataSource, DataSources
 from .._embedder import Embedder
 from .._rule import SimpleSQLAlchemyRule, DEFAULT_LEVEL
-
-
-class RuleDefRequired(t.TypedDict):
-    sql: str
-    id: str
-    detection_type: str
-    msg: str
-    datasource: str
-
-
-class RuleDef(RuleDefRequired, total=False):
-    level: int
-    embedders: t.List[str]
-
-
-class RulesFile(t.TypedDict):
-    rules: t.Sequence[RuleDef]
-    embedders: t.Mapping[str, t.Any]
-    datasources: t.Mapping[str, t.Any]
+from ._type import RulesFile
 
 
 def load_rules_from_yaml(
@@ -48,12 +30,12 @@ def load_rules_from_yaml(
 
     embedders: t.MutableMapping[str, Embedder] = {
         embedder_name: _construct_embedder(embedder_attr)
-        for embedder_name, embedder_attr in rules["embedders"].items()
+        for embedder_name, embedder_attr in rules.get("embedders", {}).items()
     }
 
     datasources: t.Mapping[str, DataSource] = {
         datasource_name: _construct_datasource(datasource_attr)
-        for datasource_name, datasource_attr in rules["datasources"].items()
+        for datasource_name, datasource_attr in rules.get("datasources", {}).items()
     }
 
     return [
@@ -66,7 +48,7 @@ def load_rules_from_yaml(
             datasource=rule["datasource"],
             embedders=_construct_embedders(rule.get("embedders"), embedders),
         )
-        for rule in rules["rules"]
+        for rule in rules.get("rules", [])
     ], DataSources(datasources)
 
 
