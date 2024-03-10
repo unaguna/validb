@@ -170,12 +170,12 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
             )
 
         sql = text(self.sql)
-        detected_list: t.List[Detected[ID, DETECTION_TYPE, MSG]] = []
-        for r in datasource.session.execute(sql):
-            row = Row.from_sqlalchemy(r)
-            detected_list.append(self.detect(row, constructor=detected))
 
-        return detected_list
+        sql_result = datasource.session.execute(sql)
+        return [
+            self.detect(Row.from_sqlalchemy(row), constructor=detected)
+            for row in sql_result
+        ]
 
 
 class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
