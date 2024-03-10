@@ -1,7 +1,8 @@
 import os
 import sys
 
-from validb import load_rules_from_yaml, validate_db
+from validb import validate_db
+from validb.config import load_rules_from_yaml
 
 
 if __name__ == "__main__":

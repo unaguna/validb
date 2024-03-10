@@ -2,7 +2,7 @@ from .datasources import DataSource, DataSources
 from ._detected import Detected, TextDetected
 from ._row import Row
 from ._embedder import Embedder
-from ._rule import Rule, SQLAlchemyRule, load_rules_from_yaml
+from ._rule import Rule, SQLAlchemyRule
 from ._detectiondata import DetectionData
 from ._validate import validate_db
 
@@ -12,7 +12,6 @@ __all__ = [
     "Detected",
     "DetectionData",
     "Embedder",
-    "load_rules_from_yaml",
     "Row",
     "Rule",
     "SQLAlchemyRule",
