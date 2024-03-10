@@ -1,8 +1,5 @@
-from ._datasource import (
-    DataSource,
-    DataSources,
-    SQLAlchemyDataSource,
-)
+from ._datasource import DataSource, DataSources
+from ._sqlalchemy import SQLAlchemyDataSource
 
 __all__ = [
     "DataSource",
