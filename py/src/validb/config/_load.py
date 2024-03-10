@@ -1,7 +1,11 @@
-import importlib
 import pathlib
 import typing as t
 
+from .._classloader import (
+    import_class_dinamically,
+    IllegalPathError,
+    UnexpectedClassLoadedError,
+)
 from ..datasources import DataSource, DataSources
 from .._embedder import Embedder
 from ..rules import SimpleSQLAlchemyRule, DEFAULT_LEVEL
@@ -61,20 +65,14 @@ def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
 
 
 def _import_embedder(path: t.Any) -> t.Type[Embedder]:
-    if not isinstance(path, str):
+    try:
+        embedder_class = import_class_dinamically(
+            path,
+            expected_class=Embedder,
+        )
+    except IllegalPathError:
         raise ValueError("embedders.*.class must be a string like 'module.class'")
-
-    embedder_path = path.split(".")
-    if len(embedder_path) < 2:
-        raise ValueError("embedders.*.class must be a string like 'module.class'")
-
-    embedder_module_str = ".".join(embedder_path[:-1])
-    embedder_class_name = embedder_path[-1]
-    embedder_module = importlib.import_module(embedder_module_str)
-
-    embedder_class = getattr(embedder_module, embedder_class_name)
-
-    if not issubclass(embedder_class, Embedder):
+    except UnexpectedClassLoadedError:
         raise TypeError(f"embedder must be instance of {Embedder.__name__}")
 
     return embedder_class
@@ -98,20 +96,14 @@ def _construct_datasource(datasource_attr: t.Mapping[str, t.Any]) -> DataSource:
 
 
 def _import_datasource(path: t.Any) -> t.Type[DataSource]:
-    if not isinstance(path, str):
+    try:
+        datasource_class = import_class_dinamically(
+            path,
+            expected_class=DataSource,
+        )
+    except IllegalPathError:
         raise ValueError("datasources.*.class must be a string like 'module.class'")
-
-    datasource_path = path.split(".")
-    if len(datasource_path) < 2:
-        raise ValueError("datasources.*.class must be a string like 'module.class'")
-
-    datasource_module_str = ".".join(datasource_path[:-1])
-    datasource_class_name = datasource_path[-1]
-    datasource_module = importlib.import_module(datasource_module_str)
-
-    datasource_class = getattr(datasource_module, datasource_class_name)
-
-    if not issubclass(datasource_class, DataSource):
+    except UnexpectedClassLoadedError:
         raise TypeError(f"datasource must be instance of {DataSource.__name__}")
 
     return datasource_class
