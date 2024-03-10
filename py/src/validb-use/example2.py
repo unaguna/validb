@@ -1,26 +1,23 @@
 import os
 import sys
 
-from validb import validate_db, load_rules_from_yaml
+from validb import load_rules_from_yaml, validate_db
 
 
 if __name__ == "__main__":
     import csv
     import os
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import Session
 
     # allow to import custom classes
     sys.path.append(os.path.join(os.path.dirname(__file__), "pythonpath"))
 
-    rules = load_rules_from_yaml(os.path.join(os.path.dirname(__file__), "rules.yml"))
-
-    engine = create_engine(os.environ["DEV_DB_URL"])
-
-    with Session(engine) as session:
+    rules, datasources = load_rules_from_yaml(
+        os.path.join(os.path.dirname(__file__), "rules_host.yml")
+    )
+    with datasources:
         detection_data = validate_db(
             rules=rules,
-            session=session,
+            datasources=datasources,
         )
 
     # Outputs a summary of anomalies per record

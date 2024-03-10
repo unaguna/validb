@@ -76,6 +76,24 @@ class DetectionData(t.Generic[ID, DETECTION_TYPE, MSG]):
             detected
         )
 
+    def extend(self, detecteds: t.Iterable[Detected[ID, DETECTION_TYPE, MSG]]):
+        """append detecteds anomaly
+
+        Normally, this function is used only inside validb.
+
+        Parameters
+        ----------
+        detecteds : Iterable[Detected]
+            iterator of detected anomaly
+
+        Raises
+        ------
+        TooManyDetectionException
+            If the maximum number of detections specified at the time of instance creation is exceeded.
+        """
+        for detected in detecteds:
+            self.append(detected)
+
     def ids(self) -> t.Iterable[ID]:
         """create the iterator of IDs of records for which anomalies were detected.
 

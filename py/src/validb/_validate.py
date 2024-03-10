@@ -1,25 +1,17 @@
 import typing as t
 
-from sqlalchemy.orm import Session, scoped_session
-from sqlalchemy.sql import text
 
-from ._row import Row
-from ._detected import Detected, ID, MSG, DETECTION_TYPE, TextDetected
+from .datasources import DataSources
+from ._detected import DetectedType, ID, MSG, DETECTION_TYPE, TextDetected
 from ._rule import Rule
 from ._detectiondata import DetectionData, TooManyDetectionException
-
-
-class _DetectedType(t.Protocol, t.Generic[ID, DETECTION_TYPE, MSG]):
-    def __call__(
-        self, id: ID, level: int, detection_type: DETECTION_TYPE, msg: MSG
-    ) -> Detected[ID, DETECTION_TYPE, MSG]: ...
 
 
 def validate_db(
     *,
     rules: t.Collection[Rule[ID, DETECTION_TYPE, MSG]],
-    detected: _DetectedType[ID, DETECTION_TYPE, MSG] = TextDetected,
-    session: t.Union[Session, scoped_session[Session]],
+    detected: DetectedType[ID, DETECTION_TYPE, MSG] = TextDetected,
+    datasources: DataSources,
     max_detection: t.Optional[int] = None,
 ) -> DetectionData[ID, DETECTION_TYPE, MSG]:
     """Validate data in the database.
@@ -31,8 +23,8 @@ def validate_db(
     detected : Callable[[ID, DETECTION_TYPE, MSG], Detected]
         the constructor of Detected class;
         Typically, it is sufficient to specify the subclass itself of Detected.
-    session : Session
-        a session to the database
+    datasources : DataSources
+        datasources
     max_detection : int, optional
         maximum number of detections.
         More detections than the specified number is ignored.
@@ -49,17 +41,8 @@ def validate_db(
 
     try:
         for rule in rules:
-            sql = text(rule.sql)
-            for r in session.execute(sql):
-                row = Row.from_sqlalchemy(r)
-                detection_data.append(
-                    detected(
-                        rule.id_of_row(row),
-                        rule.level(),
-                        rule.detection_type(),
-                        rule.message(row),
-                    )
-                )
+            detected_list = rule.exec(datasources=datasources, detected=detected)
+            detection_data.extend(detected_list)
     except TooManyDetectionException:
         pass
 

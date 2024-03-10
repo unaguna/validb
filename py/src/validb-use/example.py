@@ -4,7 +4,15 @@ import os
 import sys
 import typing as t
 
-from validb import Detected, Embedder, Rule, validate_db
+from validb import (
+    DataSources,
+    Detected,
+    Embedder,
+    Rule,
+    SQLAlchemyRule,
+    validate_db,
+)
+from validb.datasources import SQLAlchemyDataSource
 
 
 class MyMsgType(enum.Enum):
@@ -33,36 +41,36 @@ class MyEmbedder(Embedder):
 
 
 rules: t.List[Rule[str, MyMsgType, str]] = [
-    Rule.create(
+    SQLAlchemyRule(
         "SELECT Code FROM country where InDepYear is NULL",
         lambda r: r[0],
         0,
         MyMsgType.NULL_YEAR,
         lambda r: f"null year; today={r['today']}",
+        datasource="mysql",
         embedders=[MyEmbedder()],
     ),
-    Rule.create(
+    SQLAlchemyRule(
         "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population",
         lambda r: r["Code"],
         1,
         MyMsgType.TOO_SMALL,
         lambda r: f"too small; SurfaceArea={r[1]}, Population={r['Population']}",
+        datasource="mysql",
     ),
 ]
 
 
 if __name__ == "__main__":
     import csv
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import Session
 
-    engine = create_engine(os.environ["DEV_DB_URL"])
-
-    with Session(engine) as session:
+    with DataSources(
+        {"mysql": SQLAlchemyDataSource(url=os.environ["DEV_DB_URL"])}
+    ) as datasources:
         detection_data = validate_db(
             rules=rules,
             detected=MyDetected,
-            session=session,
+            datasources=datasources,
             max_detection=None,
         )
 

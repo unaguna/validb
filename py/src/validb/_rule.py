@@ -3,9 +3,12 @@ import importlib
 import pathlib
 import typing as t
 
+from sqlalchemy.sql import text
+
+from .datasources import DataSource, DataSources, SQLAlchemyDataSource
 from ._embedder import Embedder
 from ._row import Row
-from ._detected import ID, MSG, DETECTION_TYPE
+from ._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 
 
 DEFAULT_LEVEL = 0
@@ -13,20 +16,6 @@ DEFAULT_LEVEL = 0
 
 class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     """validation rule definition"""
-
-    @classmethod
-    def create(
-        cls,
-        sql: str,
-        id_of_row: t.Callable[[Row], ID],
-        level: int,
-        detection_type: DETECTION_TYPE,
-        msg: t.Callable[[Row], MSG],
-        embedders: t.Optional[t.Sequence[Embedder]] = None,
-    ) -> "Rule[ID, DETECTION_TYPE, MSG]":
-        return _RuleImpl(
-            sql, id_of_row, level, detection_type, msg, embedders=embedders
-        )
 
     @property
     @abc.abstractmethod
@@ -80,8 +69,42 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def exec(
+        self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
+    ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
+        """exec validation according the rule
 
-class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG]):
+        Parameters
+        ----------
+        datasources : DataSources
+            data sources;
+            The data sources required by the rule are used.
+        detected : DetectedType[ID, DETECTION_TYPE, MSG]
+            constructor of detected anomalies;
+            If anomalies are detected, this constructor is executed for that number of instances,
+            and the returned instances become elements of the final detection list.
+
+        Returns
+        -------
+        Sequence[Detected[ID, DETECTION_TYPE, MSG]]
+            List of detected anomalies
+        """
+        ...
+
+    def detect(
+        self, row: Row, constructor: DetectedType[ID, DETECTION_TYPE, MSG]
+    ) -> Detected[ID, DETECTION_TYPE, MSG]:
+        """construct Detected instance"""
+        return constructor(
+            self.id_of_row(row),
+            self.level(),
+            self.detection_type(),
+            self.message(row),
+        )
+
+
+class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG]):
     """validation rule definition"""
 
     _sql: str
@@ -89,6 +112,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
     _level: int
     _detection_type: DETECTION_TYPE
     _msg: t.Callable[[Row], MSG]
+    _datasource: str
     _embedders: t.Sequence[Embedder]
 
     def __init__(
@@ -98,6 +122,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         level: int,
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
+        datasource: str,
         embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
         """create a validation rule
@@ -118,6 +143,8 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
             it is usually specified as a different value for each rule.
         msg : MSG
             the message of detection
+        datasource : str
+            name of the datasource
         embedders: Sequence[Embedder]
             Generator of embedding variables to be used when creating messages.
             If not specified, only fields obtained by SQL can be embedded.
@@ -129,6 +156,7 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         self._level = level
         self._detection_type = detection_type
         self._msg = msg
+        self._datasource = datasource
         self._embedders = embedders if embedders is not None else []
 
     @property
@@ -147,14 +175,31 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
     def message(self, row: Row) -> MSG:
         return self._msg(row.extended(self._embedders))
 
+    @property
+    def datasource_name(self) -> str:
+        return self._datasource
 
-class SimpleRule(Rule[str, str, str]):
-    _sql: str
+    def exec(
+        self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
+    ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
+        datasource = datasources[self.datasource_name]
+        if not isinstance(datasource, SQLAlchemyDataSource):
+            raise TypeError(
+                f"the data source for ${self.__class__.__name__} must be ${SQLAlchemyDataSource.__name__}; actual={type(datasource)}"
+            )
+
+        sql = text(self.sql)
+
+        sql_result = datasource.session.execute(sql)
+        return [
+            self.detect(Row.from_sqlalchemy(row), constructor=detected)
+            for row in sql_result
+        ]
+
+
+class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
     _id_template: str
-    _level: int
-    _detection_type: str
-    _msg: str
-    _embedders: t.Sequence[Embedder]
+    _msg_template: str
 
     def __init__(
         self,
@@ -163,6 +208,7 @@ class SimpleRule(Rule[str, str, str]):
         level: int,
         detection_type: str,
         msg: str,
+        datasource: str,
         embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
         """create a validation rule
@@ -186,35 +232,30 @@ class SimpleRule(Rule[str, str, str]):
             it is usually specified as a different value for each rule.
         msg : MSG
             the message of detection
+        datasource : str
+            name of the datasource
         embedders: Sequence[Embedder]
             Generator of embedding variables to be used when creating messages.
             If not specified, only fields obtained by SQL can be embedded.
         """
-        super().__init__()
-
-        self._sql = sql
+        super().__init__(
+            sql=sql,
+            id_of_row=self._get_id_of_row,
+            level=level,
+            detection_type=detection_type,
+            msg=self._get_message,
+            datasource=datasource,
+            embedders=embedders,
+        )
         self._id_template = id_template
-        self._level = level
-        self._detection_type = detection_type
-        self._msg = msg
-        self._embedders = embedders if embedders is not None else []
+        self._msg_template = msg
 
-    @property
-    def sql(self) -> str:
-        return self._sql
-
-    def id_of_row(self, row: Row) -> str:
+    def _get_id_of_row(self, row: Row) -> str:
         return self._id_template.format(*row.sequence, **row.mapping)
 
-    def level(self) -> int:
-        return self._level
-
-    def detection_type(self) -> str:
-        return self._detection_type
-
-    def message(self, row: Row) -> str:
+    def _get_message(self, row: Row) -> str:
         final_row = row.extended(self._embedders)
-        return self._msg.format(*final_row.sequence, **final_row.mapping)
+        return self._msg_template.format(*final_row.sequence, **final_row.mapping)
 
 
 class RuleDefRequired(t.TypedDict):
@@ -222,6 +263,7 @@ class RuleDefRequired(t.TypedDict):
     id: str
     detection_type: str
     msg: str
+    datasource: str
 
 
 class RuleDef(RuleDefRequired, total=False):
@@ -232,11 +274,12 @@ class RuleDef(RuleDefRequired, total=False):
 class RulesFile(t.TypedDict):
     rules: t.Sequence[RuleDef]
     embedders: t.Mapping[str, t.Any]
+    datasources: t.Mapping[str, t.Any]
 
 
 def load_rules_from_yaml(
     filepath: t.Union[str, bytes, pathlib.Path]
-) -> t.List[SimpleRule]:
+) -> t.Tuple[t.List[SimpleSQLAlchemyRule], DataSources]:
     """Load validation rules from the YAML file.
 
     Parameters
@@ -259,17 +302,23 @@ def load_rules_from_yaml(
         for embedder_name, embedder_attr in rules["embedders"].items()
     }
 
+    datasources: t.Mapping[str, DataSource] = {
+        datasource_name: _construct_datasource(datasource_attr)
+        for datasource_name, datasource_attr in rules["datasources"].items()
+    }
+
     return [
-        SimpleRule(
+        SimpleSQLAlchemyRule(
             sql=rule["sql"],
             id_template=rule["id"],
             level=rule.get("level", DEFAULT_LEVEL),
             detection_type=rule["detection_type"],
             msg=rule["msg"],
+            datasource=rule["datasource"],
             embedders=_construct_embedders(rule.get("embedders"), embedders),
         )
         for rule in rules["rules"]
-    ]
+    ], DataSources(datasources)
 
 
 def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
@@ -307,3 +356,31 @@ def _construct_embedders(
         return None
 
     return [embedder_instances[embedder_name] for embedder_name in embedders]
+
+
+def _construct_datasource(datasource_attr: t.Mapping[str, t.Any]) -> DataSource:
+    datasource_class = _import_datasource(datasource_attr["class"])
+    datasource = datasource_class(
+        **{key: value for key, value in datasource_attr.items() if key != "class"}
+    )
+    return datasource
+
+
+def _import_datasource(path: t.Any) -> t.Type[DataSource]:
+    if not isinstance(path, str):
+        raise ValueError("datasources.*.class must be a string like 'module.class'")
+
+    datasource_path = path.split(".")
+    if len(datasource_path) < 2:
+        raise ValueError("datasources.*.class must be a string like 'module.class'")
+
+    datasource_module_str = ".".join(datasource_path[:-1])
+    datasource_class_name = datasource_path[-1]
+    datasource_module = importlib.import_module(datasource_module_str)
+
+    datasource_class = getattr(datasource_module, datasource_class_name)
+
+    if not issubclass(datasource_class, DataSource):
+        raise TypeError(f"datasource must be instance of {DataSource.__name__}")
+
+    return datasource_class
