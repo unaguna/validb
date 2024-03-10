@@ -1,3 +1,13 @@
-from ._datasource import DataSources, SQLAlchemyDataSource
+from ._datasource import (
+    DataSource,
+    DataSources,
+    SQLAlchemyDataSource,
+    SQLAlchemyEngineDataSource,
+)
 
-__all__ = ["DataSources", "SQLAlchemyDataSource"]
+__all__ = [
+    "DataSource",
+    "DataSources",
+    "SQLAlchemyDataSource",
+    "SQLAlchemyEngineDataSource",
+]

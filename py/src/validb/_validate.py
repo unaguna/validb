@@ -2,7 +2,7 @@ import typing as t
 
 from sqlalchemy.sql import text
 
-from .datasources import DataSources, SQLAlchemyDataSource
+from .datasources import DataSources, SQLAlchemyDataSource, SQLAlchemyEngineDataSource
 from ._row import Row
 from ._detected import Detected, ID, MSG, DETECTION_TYPE, TextDetected
 from ._rule import Rule, SQLAlchemyRule
@@ -54,7 +54,9 @@ def validate_db(
                 raise
 
             datasource = datasources[rule.datasource_name]
-            if not isinstance(datasource, SQLAlchemyDataSource):
+            if not isinstance(
+                datasource, (SQLAlchemyDataSource, SQLAlchemyEngineDataSource)
+            ):
                 # TODO: エラーメッセージ
                 raise
 

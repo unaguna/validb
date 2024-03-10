@@ -3,12 +3,14 @@ rules:
     id: "{0}"
     detection_type: "NULL_YEAR"
     msg: "null year; Code={0}, today={today}, yesterday={yesterday}"
+    datasource: "mysql"
     embedders: ["today_embedder", "yesterday_embedder"]
   - sql: "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population"
     id: "{Code}"
     level: 1
     detection_type: "TOO_SMALL"
     msg: "too small!; SurfaceArea={1}, Population={Population}"
+    datasource: "mysql"
 embedders:
   today_embedder:
     class: custom.TodayEmbedder
@@ -16,3 +18,7 @@ embedders:
     class: custom.TodayEmbedder
     key_name: yesterday
     shift: -1
+datasources:
+  mysql:
+    class: validb.datasources.SQLAlchemyEngineDataSource
+    url: "mysql+pymysql://?read_default_file=./validb-use/my.cnf"

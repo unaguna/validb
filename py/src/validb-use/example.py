@@ -68,8 +68,7 @@ if __name__ == "__main__":
 
     engine = create_engine(os.environ["DEV_DB_URL"])
 
-    with DataSources() as datasources:
-        datasources["mysql"] = SQLAlchemyDataSource(Session(engine))
+    with DataSources({"mysql": SQLAlchemyDataSource(Session(engine))}) as datasources:
         detection_data = validate_db(
             rules=rules,
             detected=MyDetected,

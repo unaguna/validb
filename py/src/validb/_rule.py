@@ -3,6 +3,7 @@ import importlib
 import pathlib
 import typing as t
 
+from .datasources import DataSource, DataSources
 from ._embedder import Embedder
 from ._row import Row
 from ._detected import ID, MSG, DETECTION_TYPE
@@ -220,11 +221,12 @@ class RuleDef(RuleDefRequired, total=False):
 class RulesFile(t.TypedDict):
     rules: t.Sequence[RuleDef]
     embedders: t.Mapping[str, t.Any]
+    datasources: t.Mapping[str, t.Any]
 
 
 def load_rules_from_yaml(
     filepath: t.Union[str, bytes, pathlib.Path]
-) -> t.List[SimpleSQLAlchemyRule]:
+) -> t.Tuple[t.List[SimpleSQLAlchemyRule], DataSources]:
     """Load validation rules from the YAML file.
 
     Parameters
@@ -247,6 +249,11 @@ def load_rules_from_yaml(
         for embedder_name, embedder_attr in rules["embedders"].items()
     }
 
+    datasources: t.Mapping[str, DataSource] = {
+        datasource_name: _construct_datasource(datasource_attr)
+        for datasource_name, datasource_attr in rules["datasources"].items()
+    }
+
     return [
         SimpleSQLAlchemyRule(
             sql=rule["sql"],
@@ -258,7 +265,7 @@ def load_rules_from_yaml(
             embedders=_construct_embedders(rule.get("embedders"), embedders),
         )
         for rule in rules["rules"]
-    ]
+    ], DataSources(datasources)
 
 
 def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
@@ -296,3 +303,31 @@ def _construct_embedders(
         return None
 
     return [embedder_instances[embedder_name] for embedder_name in embedders]
+
+
+def _construct_datasource(datasource_attr: t.Mapping[str, t.Any]) -> DataSource:
+    datasource_class = _import_datasource(datasource_attr["class"])
+    datasource = datasource_class(
+        **{key: value for key, value in datasource_attr.items() if key != "class"}
+    )
+    return datasource
+
+
+def _import_datasource(path: t.Any) -> t.Type[DataSource]:
+    if not isinstance(path, str):
+        raise ValueError("datasources.*.class must be a string like 'module.class'")
+
+    datasource_path = path.split(".")
+    if len(datasource_path) < 2:
+        raise ValueError("datasources.*.class must be a string like 'module.class'")
+
+    datasource_module_str = ".".join(datasource_path[:-1])
+    datasource_class_name = datasource_path[-1]
+    datasource_module = importlib.import_module(datasource_module_str)
+
+    datasource_class = getattr(datasource_module, datasource_class_name)
+
+    if not issubclass(datasource_class, DataSource):
+        raise TypeError(f"datasource must be instance of {DataSource.__name__}")
+
+    return datasource_class
