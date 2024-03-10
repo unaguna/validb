@@ -4,7 +4,15 @@ import os
 import sys
 import typing as t
 
-from validb import Detected, Embedder, Rule, SQLAlchemyRule, validate_db
+from validb import (
+    DataSources,
+    Detected,
+    Embedder,
+    Rule,
+    SQLAlchemyDataSource,
+    SQLAlchemyRule,
+    validate_db,
+)
 
 
 class MyMsgType(enum.Enum):
@@ -39,6 +47,7 @@ rules: t.List[Rule[str, MyMsgType, str]] = [
         0,
         MyMsgType.NULL_YEAR,
         lambda r: f"null year; today={r['today']}",
+        datasource="mysql",
         embedders=[MyEmbedder()],
     ),
     SQLAlchemyRule(
@@ -47,6 +56,7 @@ rules: t.List[Rule[str, MyMsgType, str]] = [
         1,
         MyMsgType.TOO_SMALL,
         lambda r: f"too small; SurfaceArea={r[1]}, Population={r['Population']}",
+        datasource="mysql",
     ),
 ]
 
@@ -58,11 +68,12 @@ if __name__ == "__main__":
 
     engine = create_engine(os.environ["DEV_DB_URL"])
 
-    with Session(engine) as session:
+    with DataSources() as datasources:
+        datasources["mysql"] = SQLAlchemyDataSource(Session(engine))
         detection_data = validate_db(
             rules=rules,
             detected=MyDetected,
-            session=session,
+            datasources=datasources,
             max_detection=None,
         )
 

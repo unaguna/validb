@@ -75,6 +75,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     _level: int
     _detection_type: DETECTION_TYPE
     _msg: t.Callable[[Row], MSG]
+    _datasource: str
     _embedders: t.Sequence[Embedder]
 
     def __init__(
@@ -84,6 +85,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         level: int,
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[Row], MSG],
+        datasource: str,
         embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
         """create a validation rule
@@ -104,6 +106,8 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
             it is usually specified as a different value for each rule.
         msg : MSG
             the message of detection
+        datasource : str
+            name of the datasource
         embedders: Sequence[Embedder]
             Generator of embedding variables to be used when creating messages.
             If not specified, only fields obtained by SQL can be embedded.
@@ -115,6 +119,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         self._level = level
         self._detection_type = detection_type
         self._msg = msg
+        self._datasource = datasource
         self._embedders = embedders if embedders is not None else []
 
     @property
@@ -133,6 +138,10 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     def message(self, row: Row) -> MSG:
         return self._msg(row.extended(self._embedders))
 
+    @property
+    def datasource_name(self) -> str:
+        return self._datasource
+
 
 class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
     _id_template: str
@@ -145,6 +154,7 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
         level: int,
         detection_type: str,
         msg: str,
+        datasource: str,
         embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
         """create a validation rule
@@ -168,6 +178,8 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
             it is usually specified as a different value for each rule.
         msg : MSG
             the message of detection
+        datasource : str
+            name of the datasource
         embedders: Sequence[Embedder]
             Generator of embedding variables to be used when creating messages.
             If not specified, only fields obtained by SQL can be embedded.
@@ -178,6 +190,7 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
             level=level,
             detection_type=detection_type,
             msg=self._get_message,
+            datasource=datasource,
             embedders=embedders,
         )
         self._id_template = id_template
@@ -196,6 +209,7 @@ class RuleDefRequired(t.TypedDict):
     id: str
     detection_type: str
     msg: str
+    datasource: str
 
 
 class RuleDef(RuleDefRequired, total=False):
@@ -240,6 +254,7 @@ def load_rules_from_yaml(
             level=rule.get("level", DEFAULT_LEVEL),
             detection_type=rule["detection_type"],
             msg=rule["msg"],
+            datasource=rule["datasource"],
             embedders=_construct_embedders(rule.get("embedders"), embedders),
         )
         for rule in rules["rules"]

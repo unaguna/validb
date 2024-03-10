@@ -1,11 +1,11 @@
 import typing as t
 
-from sqlalchemy.orm import Session, scoped_session
 from sqlalchemy.sql import text
 
+from ._datasource import DataSources, SQLAlchemyDataSource
 from ._row import Row
 from ._detected import Detected, ID, MSG, DETECTION_TYPE, TextDetected
-from ._rule import Rule
+from ._rule import Rule, SQLAlchemyRule
 from ._detectiondata import DetectionData, TooManyDetectionException
 
 
@@ -19,7 +19,7 @@ def validate_db(
     *,
     rules: t.Collection[Rule[ID, DETECTION_TYPE, MSG]],
     detected: _DetectedType[ID, DETECTION_TYPE, MSG] = TextDetected,
-    session: t.Union[Session, scoped_session[Session]],
+    datasources: DataSources,
     max_detection: t.Optional[int] = None,
 ) -> DetectionData[ID, DETECTION_TYPE, MSG]:
     """Validate data in the database.
@@ -31,8 +31,8 @@ def validate_db(
     detected : Callable[[ID, DETECTION_TYPE, MSG], Detected]
         the constructor of Detected class;
         Typically, it is sufficient to specify the subclass itself of Detected.
-    session : Session
-        a session to the database
+    datasources : DataSources
+        datasources
     max_detection : int, optional
         maximum number of detections.
         More detections than the specified number is ignored.
@@ -49,8 +49,17 @@ def validate_db(
 
     try:
         for rule in rules:
+            # TODO: ポリモーフィズムで一般の Rule で動くように
+            if not isinstance(rule, SQLAlchemyRule):
+                raise
+
+            datasource = datasources[rule.datasource_name]
+            if not isinstance(datasource, SQLAlchemyDataSource):
+                # TODO: エラーメッセージ
+                raise
+
             sql = text(rule.sql)
-            for r in session.execute(sql):
+            for r in datasource.session.execute(sql):
                 row = Row.from_sqlalchemy(r)
                 detection_data.append(
                     detected(
