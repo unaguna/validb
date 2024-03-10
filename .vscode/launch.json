@@ -5,6 +5,17 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run Module validb",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "validb",
+      "args": ["-r", "${workspaceFolder}/py/src/validb-use/rules_host.yml"],
+      "cwd": "${workspaceFolder}/py/src",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}/py/src/validb-use/pythonpath;${workspaceRoot}/py/src;${env:PYTHONPATH}"
+      }
+    },
+    {
       "name": "Run example.py",
       "type": "debugpy",
       "request": "launch",
