@@ -8,11 +8,10 @@ from validb import (
     DataSources,
     Detected,
     Embedder,
-    Rule,
-    SQLAlchemyRule,
     validate_db,
 )
 from validb.datasources import SQLAlchemyDataSource
+from validb.rules import Rule, SQLAlchemyRule
 
 
 class MyMsgType(enum.Enum):

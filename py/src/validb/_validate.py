@@ -3,8 +3,8 @@ import typing as t
 
 from .datasources import DataSources
 from ._detected import DetectedType, ID, MSG, DETECTION_TYPE, TextDetected
-from ._rule import Rule
 from ._detectiondata import DetectionData, TooManyDetectionException
+from .rules import Rule
 
 
 def validate_db(

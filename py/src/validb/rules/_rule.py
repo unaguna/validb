@@ -3,10 +3,10 @@ import typing as t
 
 from sqlalchemy.sql import text
 
-from .datasources import DataSources, SQLAlchemyDataSource
-from ._embedder import Embedder
-from ._row import Row
-from ._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
+from ..datasources import DataSources, SQLAlchemyDataSource
+from .._embedder import Embedder
+from .._row import Row
+from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 
 
 DEFAULT_LEVEL = 0

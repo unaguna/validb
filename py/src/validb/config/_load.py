@@ -4,7 +4,7 @@ import typing as t
 
 from ..datasources import DataSource, DataSources
 from .._embedder import Embedder
-from .._rule import SimpleSQLAlchemyRule, DEFAULT_LEVEL
+from ..rules import SimpleSQLAlchemyRule, DEFAULT_LEVEL
 from ._type import RulesFile
 
 
