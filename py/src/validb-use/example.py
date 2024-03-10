@@ -9,10 +9,10 @@ from validb import (
     Detected,
     Embedder,
     Rule,
-    SQLAlchemyDataSource,
     SQLAlchemyRule,
     validate_db,
 )
+from validb.datasources import SQLAlchemyDataSource
 
 
 class MyMsgType(enum.Enum):

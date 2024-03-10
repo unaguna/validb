@@ -1,4 +1,4 @@
-from ._datasource import DataSources, SQLAlchemyDataSource
+from .datasources import DataSources
 from ._detected import Detected, TextDetected
 from ._row import Row
 from ._embedder import Embedder
@@ -14,7 +14,6 @@ __all__ = [
     "load_rules_from_yaml",
     "Row",
     "Rule",
-    "SQLAlchemyDataSource",
     "SQLAlchemyRule",
     "TextDetected",
     "validate_db",

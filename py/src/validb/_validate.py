@@ -2,7 +2,7 @@ import typing as t
 
 from sqlalchemy.sql import text
 
-from ._datasource import DataSources, SQLAlchemyDataSource
+from .datasources import DataSources, SQLAlchemyDataSource
 from ._row import Row
 from ._detected import Detected, ID, MSG, DETECTION_TYPE, TextDetected
 from ._rule import Rule, SQLAlchemyRule
