@@ -12,7 +12,7 @@ if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), "pythonpath"))
 
     rules, datasources = load_rules_from_yaml(
-        os.path.join(os.path.dirname(__file__), "rules.yml")
+        os.path.join(os.path.dirname(__file__), "rules_host.yml")
     )
     with datasources:
         detection_data = validate_db(

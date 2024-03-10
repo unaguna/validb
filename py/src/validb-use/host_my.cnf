@@ -1,5 +1,6 @@
 [client]
-host=validb-mysql
+host=localhost
+port=13306
 database=dev
 user=developer
 password=Z68vSVQyqJ15PUhU0MmDD9fiY8n9a0HVKyan4J35s6rMxj3i53Du1C3zw5y21awN
