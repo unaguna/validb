@@ -74,6 +74,16 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
     ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]: ...
 
+    def detect(
+        self, row: Row, constructor: DetectedType[ID, DETECTION_TYPE, MSG]
+    ) -> Detected[ID, DETECTION_TYPE, MSG]:
+        return constructor(
+            self.id_of_row(row),
+            self.level(),
+            self.detection_type(),
+            self.message(row),
+        )
+
 
 class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG]):
     """validation rule definition"""
@@ -163,14 +173,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         detected_list: t.List[Detected[ID, DETECTION_TYPE, MSG]] = []
         for r in datasource.session.execute(sql):
             row = Row.from_sqlalchemy(r)
-            detected_list.append(
-                detected(
-                    self.id_of_row(row),
-                    self.level(),
-                    self.detection_type(),
-                    self.message(row),
-                )
-            )
+            detected_list.append(self.detect(row, constructor=detected))
 
         return detected_list
 
