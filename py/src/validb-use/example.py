@@ -63,12 +63,10 @@ rules: t.List[Rule[str, MyMsgType, str]] = [
 
 if __name__ == "__main__":
     import csv
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import Session
 
-    engine = create_engine(os.environ["DEV_DB_URL"])
-
-    with DataSources({"mysql": SQLAlchemyDataSource(Session(engine))}) as datasources:
+    with DataSources(
+        {"mysql": SQLAlchemyDataSource(url=os.environ["DEV_DB_URL"])}
+    ) as datasources:
         detection_data = validate_db(
             rules=rules,
             detected=MyDetected,

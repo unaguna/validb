@@ -28,20 +28,6 @@ class DataSource(t.ContextManager, abc.ABC):
 
 
 class SQLAlchemyDataSource(DataSource):
-    _session: t.Union[Session, scoped_session[Session]]
-
-    def __init__(self, session: t.Union[Session, scoped_session[Session]]) -> None:
-        self._session = session
-
-    def close(self):
-        self._session.close()
-
-    @property
-    def session(self) -> t.Union[Session, scoped_session[Session]]:
-        return self._session
-
-
-class SQLAlchemyEngineDataSource(DataSource):
     _engine: Engine
     _session: t.Union[Session, scoped_session[Session]]
 

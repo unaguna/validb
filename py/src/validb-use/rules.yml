@@ -20,5 +20,5 @@ embedders:
     shift: -1
 datasources:
   mysql:
-    class: validb.datasources.SQLAlchemyEngineDataSource
+    class: validb.datasources.SQLAlchemyDataSource
     url: "mysql+pymysql://?read_default_file=./validb-use/my.cnf"
