@@ -72,11 +72,30 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     @abc.abstractmethod
     def exec(
         self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
-    ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]: ...
+    ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
+        """exec validation according the rule
+
+        Parameters
+        ----------
+        datasources : DataSources
+            data sources;
+            The data sources required by the rule are used.
+        detected : DetectedType[ID, DETECTION_TYPE, MSG]
+            constructor of detected anomalies;
+            If anomalies are detected, this constructor is executed for that number of instances,
+            and the returned instances become elements of the final detection list.
+
+        Returns
+        -------
+        Sequence[Detected[ID, DETECTION_TYPE, MSG]]
+            List of detected anomalies
+        """
+        ...
 
     def detect(
         self, row: Row, constructor: DetectedType[ID, DETECTION_TYPE, MSG]
     ) -> Detected[ID, DETECTION_TYPE, MSG]:
+        """construct Detected instance"""
         return constructor(
             self.id_of_row(row),
             self.level(),
