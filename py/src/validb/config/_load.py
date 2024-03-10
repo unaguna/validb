@@ -2,7 +2,7 @@ import pathlib
 import typing as t
 
 from .._classloader import (
-    import_class_dinamically,
+    construct_imported_dinamically,
     IllegalPathError,
     UnexpectedClassLoadedError,
 )
@@ -57,25 +57,15 @@ def load_rules_from_yaml(
 
 
 def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
-    embedder_class = _import_embedder(embedder_attr["class"])
-    embedder = embedder_class(
-        **{key: value for key, value in embedder_attr.items() if key != "class"}
-    )
-    return embedder
-
-
-def _import_embedder(path: t.Any) -> t.Type[Embedder]:
     try:
-        embedder_class = import_class_dinamically(
-            path,
-            expected_class=Embedder,
+        return construct_imported_dinamically(
+            embedder_attr,
+            Embedder,
         )
     except IllegalPathError:
         raise ValueError("embedders.*.class must be a string like 'module.class'")
     except UnexpectedClassLoadedError:
         raise TypeError(f"embedder must be instance of {Embedder.__name__}")
-
-    return embedder_class
 
 
 def _construct_embedders(
@@ -88,22 +78,12 @@ def _construct_embedders(
 
 
 def _construct_datasource(datasource_attr: t.Mapping[str, t.Any]) -> DataSource:
-    datasource_class = _import_datasource(datasource_attr["class"])
-    datasource = datasource_class(
-        **{key: value for key, value in datasource_attr.items() if key != "class"}
-    )
-    return datasource
-
-
-def _import_datasource(path: t.Any) -> t.Type[DataSource]:
     try:
-        datasource_class = import_class_dinamically(
-            path,
-            expected_class=DataSource,
+        return construct_imported_dinamically(
+            datasource_attr,
+            DataSource,
         )
     except IllegalPathError:
         raise ValueError("datasources.*.class must be a string like 'module.class'")
     except UnexpectedClassLoadedError:
         raise TypeError(f"datasource must be instance of {DataSource.__name__}")
-
-    return datasource_class
