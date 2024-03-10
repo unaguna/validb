@@ -1,1 +1,3 @@
+embedders
+pymysql
 validb

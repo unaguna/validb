@@ -1,38 +1,30 @@
 import typing as t
 
-from sqlalchemy.orm import Session, scoped_session
-from sqlalchemy.sql import text
 
-from ._row import Row
-from ._detected import Detected, ID, MSG, MSG_TYPE, TextDetected
-from ._rule import Rule
+from .datasources import DataSources
+from ._detected import DetectedType, ID, MSG, DETECTION_TYPE, TextDetected
 from ._detectiondata import DetectionData, TooManyDetectionException
-
-
-class _DetectedType(t.Protocol, t.Generic[ID, MSG_TYPE, MSG]):
-    def __call__(
-        self, id: ID, msg_type: MSG_TYPE, msg: MSG
-    ) -> Detected[ID, MSG_TYPE, MSG]: ...
+from .rules import Rule
 
 
 def validate_db(
     *,
-    rules: t.Collection[Rule[ID, MSG_TYPE, MSG]],
-    detected: _DetectedType[ID, MSG_TYPE, MSG] = TextDetected,
-    session: t.Union[Session, scoped_session[Session]],
+    rules: t.Collection[Rule[ID, DETECTION_TYPE, MSG]],
+    detected: DetectedType[ID, DETECTION_TYPE, MSG] = TextDetected,
+    datasources: DataSources,
     max_detection: t.Optional[int] = None,
-) -> DetectionData[ID, MSG_TYPE, MSG]:
+) -> DetectionData[ID, DETECTION_TYPE, MSG]:
     """Validate data in the database.
 
     Parameters
     ----------
     rules : Collection[Rule]
         the list of validation rules
-    detected : Callable[[ID, MSG_TYPE, MSG], Detected]
+    detected : Callable[[ID, DETECTION_TYPE, MSG], Detected]
         the constructor of Detected class;
         Typically, it is sufficient to specify the subclass itself of Detected.
-    session : Session
-        a session to the database
+    datasources : DataSources
+        datasources
     max_detection : int, optional
         maximum number of detections.
         More detections than the specified number is ignored.
@@ -43,18 +35,14 @@ def validate_db(
     DetectionData
         the result data
     """
-    detection_data: DetectionData[ID, MSG_TYPE, MSG] = DetectionData(
+    detection_data: DetectionData[ID, DETECTION_TYPE, MSG] = DetectionData(
         max_detection=max_detection,
     )
 
     try:
         for rule in rules:
-            sql = text(rule.sql)
-            for r in session.execute(sql):
-                row = Row(r)
-                detection_data.append(
-                    detected(rule.id_of_row(row), rule.msg_type(), rule.message(row))
-                )
+            detected_list = rule.exec(datasources=datasources, detected=detected)
+            detection_data.extend(detected_list)
     except TooManyDetectionException:
         pass
 

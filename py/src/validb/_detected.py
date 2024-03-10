@@ -3,18 +3,21 @@ import typing as t
 
 
 ID = t.TypeVar("ID")
-MSG_TYPE = t.TypeVar("MSG_TYPE")
+DETECTION_TYPE = t.TypeVar("DETECTION_TYPE")
 MSG = t.TypeVar("MSG")
 
 
-class Detected(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
+class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     """detected anomaly"""
 
     _id: ID
-    _msg_type: MSG_TYPE
+    _level: int
+    _detection_type: DETECTION_TYPE
     _msg: MSG
 
-    def __init__(self, id: ID, msg_type: MSG_TYPE, msg: MSG) -> None:
+    def __init__(
+        self, id: ID, level: int, detection_type: DETECTION_TYPE, msg: MSG
+    ) -> None:
         """create detection object
 
         Parameters
@@ -22,13 +25,17 @@ class Detected(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         id : ID
             The record ID of the record for which the abnormality was detected.
             Normally, record IDs are determined according to predefined rules.
-        msg_type : MSG_TYPE
+        level: int
+            the level of detection;
+            The higher the number, the more serious the detection is treated as.
+        detection_type : DETECTION_TYPE
             Type of anomaly detected.
         msg : MSG
             The message.
         """
         self._id = id
-        self._msg_type = msg_type
+        self._level = level
+        self._detection_type = detection_type
         self._msg = msg
 
     @property
@@ -37,9 +44,17 @@ class Detected(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
         return self._id
 
     @property
-    def msg_type(self) -> MSG_TYPE:
+    def level(self) -> int:
+        """Level of detection.
+
+        The higher the number, the more serious the detection is treated as.
+        """
+        return self._level
+
+    @property
+    def detection_type(self) -> DETECTION_TYPE:
         """Type of anomaly detected."""
-        return self._msg_type
+        return self._detection_type
 
     @property
     def msg(self) -> MSG:
@@ -52,12 +67,19 @@ class Detected(t.Generic[ID, MSG_TYPE, MSG], abc.ABC):
 
 
 class TextDetected(Detected[str, str, str]):
-    def row(self) -> t.Tuple[str, str, str]:
+    def row(self) -> t.Tuple[str, int, str, str]:
         return (
             self.id,
-            self.msg_type,
+            self.level,
+            self.detection_type,
             self.msg,
         )
 
     def __repr__(self) -> str:
         return f"<TextDetected: {self.row()}>"
+
+
+class DetectedType(t.Protocol, t.Generic[ID, DETECTION_TYPE, MSG]):
+    def __call__(
+        self, id: ID, level: int, detection_type: DETECTION_TYPE, msg: MSG
+    ) -> Detected[ID, DETECTION_TYPE, MSG]: ...
