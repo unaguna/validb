@@ -77,3 +77,9 @@ class TextDetected(Detected[str, str, str]):
 
     def __repr__(self) -> str:
         return f"<TextDetected: {self.row()}>"
+
+
+class DetectedType(t.Protocol, t.Generic[ID, DETECTION_TYPE, MSG]):
+    def __call__(
+        self, id: ID, level: int, detection_type: DETECTION_TYPE, msg: MSG
+    ) -> Detected[ID, DETECTION_TYPE, MSG]: ...

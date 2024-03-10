@@ -3,10 +3,12 @@ import importlib
 import pathlib
 import typing as t
 
-from .datasources import DataSource, DataSources
+from sqlalchemy.sql import text
+
+from .datasources import DataSource, DataSources, SQLAlchemyDataSource
 from ._embedder import Embedder
 from ._row import Row
-from ._detected import ID, MSG, DETECTION_TYPE
+from ._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 
 
 DEFAULT_LEVEL = 0
@@ -66,6 +68,11 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
             each row of a result of SQL execution
         """
         pass
+
+    @abc.abstractmethod
+    def exec(
+        self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
+    ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]: ...
 
 
 class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG]):
@@ -142,6 +149,30 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     @property
     def datasource_name(self) -> str:
         return self._datasource
+
+    def exec(
+        self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
+    ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
+        datasource = datasources[self.datasource_name]
+        if not isinstance(datasource, SQLAlchemyDataSource):
+            raise TypeError(
+                f"the data source for ${self.__class__.__name__} must be ${SQLAlchemyDataSource.__name__}; actual={type(datasource)}"
+            )
+
+        sql = text(self.sql)
+        detected_list: t.List[Detected[ID, DETECTION_TYPE, MSG]] = []
+        for r in datasource.session.execute(sql):
+            row = Row.from_sqlalchemy(r)
+            detected_list.append(
+                detected(
+                    self.id_of_row(row),
+                    self.level(),
+                    self.detection_type(),
+                    self.message(row),
+                )
+            )
+
+        return detected_list
 
 
 class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):

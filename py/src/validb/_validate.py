@@ -1,24 +1,16 @@
 import typing as t
 
-from sqlalchemy.sql import text
 
-from .datasources import DataSources, SQLAlchemyDataSource
-from ._row import Row
-from ._detected import Detected, ID, MSG, DETECTION_TYPE, TextDetected
-from ._rule import Rule, SQLAlchemyRule
+from .datasources import DataSources
+from ._detected import DetectedType, ID, MSG, DETECTION_TYPE, TextDetected
+from ._rule import Rule
 from ._detectiondata import DetectionData, TooManyDetectionException
-
-
-class _DetectedType(t.Protocol, t.Generic[ID, DETECTION_TYPE, MSG]):
-    def __call__(
-        self, id: ID, level: int, detection_type: DETECTION_TYPE, msg: MSG
-    ) -> Detected[ID, DETECTION_TYPE, MSG]: ...
 
 
 def validate_db(
     *,
     rules: t.Collection[Rule[ID, DETECTION_TYPE, MSG]],
-    detected: _DetectedType[ID, DETECTION_TYPE, MSG] = TextDetected,
+    detected: DetectedType[ID, DETECTION_TYPE, MSG] = TextDetected,
     datasources: DataSources,
     max_detection: t.Optional[int] = None,
 ) -> DetectionData[ID, DETECTION_TYPE, MSG]:
@@ -49,26 +41,8 @@ def validate_db(
 
     try:
         for rule in rules:
-            # TODO: ポリモーフィズムで一般の Rule で動くように
-            if not isinstance(rule, SQLAlchemyRule):
-                raise
-
-            datasource = datasources[rule.datasource_name]
-            if not isinstance(datasource, SQLAlchemyDataSource):
-                # TODO: エラーメッセージ
-                raise
-
-            sql = text(rule.sql)
-            for r in datasource.session.execute(sql):
-                row = Row.from_sqlalchemy(r)
-                detection_data.append(
-                    detected(
-                        rule.id_of_row(row),
-                        rule.level(),
-                        rule.detection_type(),
-                        rule.message(row),
-                    )
-                )
+            detected_list = rule.exec(datasources=datasources, detected=detected)
+            detection_data.extend(detected_list)
     except TooManyDetectionException:
         pass
 
