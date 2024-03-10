@@ -4,7 +4,7 @@ import os
 import sys
 import typing as t
 
-from validb import Detected, Embedder, Rule, validate_db
+from validb import Detected, Embedder, Rule, SQLAlchemyRule, validate_db
 
 
 class MyMsgType(enum.Enum):
@@ -33,7 +33,7 @@ class MyEmbedder(Embedder):
 
 
 rules: t.List[Rule[str, MyMsgType, str]] = [
-    Rule.create(
+    SQLAlchemyRule(
         "SELECT Code FROM country where InDepYear is NULL",
         lambda r: r[0],
         0,
@@ -41,7 +41,7 @@ rules: t.List[Rule[str, MyMsgType, str]] = [
         lambda r: f"null year; today={r['today']}",
         embedders=[MyEmbedder()],
     ),
-    Rule.create(
+    SQLAlchemyRule(
         "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population",
         lambda r: r["Code"],
         1,

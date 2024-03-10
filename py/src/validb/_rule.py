@@ -14,20 +14,6 @@ DEFAULT_LEVEL = 0
 class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     """validation rule definition"""
 
-    @classmethod
-    def create(
-        cls,
-        sql: str,
-        id_of_row: t.Callable[[Row], ID],
-        level: int,
-        detection_type: DETECTION_TYPE,
-        msg: t.Callable[[Row], MSG],
-        embedders: t.Optional[t.Sequence[Embedder]] = None,
-    ) -> "Rule[ID, DETECTION_TYPE, MSG]":
-        return _RuleImpl(
-            sql, id_of_row, level, detection_type, msg, embedders=embedders
-        )
-
     @property
     @abc.abstractmethod
     def sql(self) -> str:
@@ -81,7 +67,7 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         pass
 
 
-class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG]):
+class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG]):
     """validation rule definition"""
 
     _sql: str
@@ -148,13 +134,9 @@ class _RuleImpl(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG
         return self._msg(row.extended(self._embedders))
 
 
-class SimpleRule(Rule[str, str, str]):
-    _sql: str
+class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
     _id_template: str
-    _level: int
-    _detection_type: str
-    _msg: str
-    _embedders: t.Sequence[Embedder]
+    _msg_template: str
 
     def __init__(
         self,
@@ -190,31 +172,23 @@ class SimpleRule(Rule[str, str, str]):
             Generator of embedding variables to be used when creating messages.
             If not specified, only fields obtained by SQL can be embedded.
         """
-        super().__init__()
-
-        self._sql = sql
+        super().__init__(
+            sql=sql,
+            id_of_row=self._get_id_of_row,
+            level=level,
+            detection_type=detection_type,
+            msg=self._get_message,
+            embedders=embedders,
+        )
         self._id_template = id_template
-        self._level = level
-        self._detection_type = detection_type
-        self._msg = msg
-        self._embedders = embedders if embedders is not None else []
+        self._msg_template = msg
 
-    @property
-    def sql(self) -> str:
-        return self._sql
-
-    def id_of_row(self, row: Row) -> str:
+    def _get_id_of_row(self, row: Row) -> str:
         return self._id_template.format(*row.sequence, **row.mapping)
 
-    def level(self) -> int:
-        return self._level
-
-    def detection_type(self) -> str:
-        return self._detection_type
-
-    def message(self, row: Row) -> str:
+    def _get_message(self, row: Row) -> str:
         final_row = row.extended(self._embedders)
-        return self._msg.format(*final_row.sequence, **final_row.mapping)
+        return self._msg_template.format(*final_row.sequence, **final_row.mapping)
 
 
 class RuleDefRequired(t.TypedDict):
@@ -236,7 +210,7 @@ class RulesFile(t.TypedDict):
 
 def load_rules_from_yaml(
     filepath: t.Union[str, bytes, pathlib.Path]
-) -> t.List[SimpleRule]:
+) -> t.List[SimpleSQLAlchemyRule]:
     """Load validation rules from the YAML file.
 
     Parameters
@@ -260,7 +234,7 @@ def load_rules_from_yaml(
     }
 
     return [
-        SimpleRule(
+        SimpleSQLAlchemyRule(
             sql=rule["sql"],
             id_template=rule["id"],
             level=rule.get("level", DEFAULT_LEVEL),
