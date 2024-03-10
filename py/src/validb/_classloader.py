@@ -10,10 +10,16 @@ class IllegalPathError(ValueError):
         self.actual_path = actual_path
 
 
+class NonClassLoadedError(TypeError):
+    def __init__(self, actual_loaded: t.Any, *args: object) -> None:
+        super().__init__(actual_loaded, *args)
+        self.actual_loaded = actual_loaded
+
+
 class UnexpectedClassLoadedError(TypeError):
-    def __init__(self, actual_class: t.Type[t.Any], *args: object) -> None:
-        super().__init__(actual_class, *args)
-        self.actual_class = actual_class
+    def __init__(self, actual_loaded: t.Type[t.Any], *args: object) -> None:
+        super().__init__(actual_loaded, *args)
+        self.actual_loaded = actual_loaded
 
 
 def import_class_dinamically(
@@ -32,8 +38,10 @@ def import_class_dinamically(
     class_name = path_parts[-1]
     module = importlib.import_module(module_str)
 
-    class_loaded = getattr(module, class_name)
+    class_loaded: t.Type[t.Any] = getattr(module, class_name)
 
+    if not isinstance(class_loaded, t.Type):
+        raise NonClassLoadedError(class_loaded)
     if not issubclass(class_loaded, expected_class):
         raise UnexpectedClassLoadedError(class_loaded)
 

@@ -4,6 +4,7 @@ import typing as t
 from .._classloader import (
     construct_imported_dinamically,
     IllegalPathError,
+    NonClassLoadedError,
     UnexpectedClassLoadedError,
 )
 from ..datasources import DataSource, DataSources
@@ -62,10 +63,14 @@ def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
             embedder_attr,
             Embedder,
         )
-    except IllegalPathError:
-        raise ValueError("embedders.*.class must be a string like 'module.class'")
-    except UnexpectedClassLoadedError:
-        raise TypeError(f"embedder must be instance of {Embedder.__name__}")
+    except IllegalPathError as e:
+        raise ValueError(
+            f"embedders.*.class must be a string like 'module.class'; actually specified path: {e.actual_path}"
+        )
+    except (UnexpectedClassLoadedError, NonClassLoadedError) as e:
+        raise TypeError(
+            f"embedder must be instance of {Embedder.__name__}; actual loaded: {e.actual_loaded}"
+        )
 
 
 def _construct_embedders(
@@ -83,7 +88,11 @@ def _construct_datasource(datasource_attr: t.Mapping[str, t.Any]) -> DataSource:
             datasource_attr,
             DataSource,
         )
-    except IllegalPathError:
-        raise ValueError("datasources.*.class must be a string like 'module.class'")
-    except UnexpectedClassLoadedError:
-        raise TypeError(f"datasource must be instance of {DataSource.__name__}")
+    except IllegalPathError as e:
+        raise ValueError(
+            f"datasources.*.class must be a string like 'module.class'; actually specified path: {e.actual_path}"
+        )
+    except (UnexpectedClassLoadedError, NonClassLoadedError) as e:
+        raise TypeError(
+            f"datasource must be instance of {DataSource.__name__}; actual loaded: {e.actual_loaded}"
+        )
