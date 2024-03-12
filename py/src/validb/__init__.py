@@ -1,7 +1,7 @@
 from .datasources import DataSource, DataSources
 from ._detected import Detected, TextDetected
 from ._row import Row
-from .dtcsvmapping import DetectionCsvMapping
+from .csvmapping import DetectionCsvMapping
 from ._embedder import Embedder
 from ._detectiondata import DetectionData
 from .rules import Rule

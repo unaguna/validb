@@ -13,7 +13,7 @@ from validb import (
 )
 from validb.datasources import SQLAlchemyDataSource
 from validb.rules import SQLAlchemyRule
-from validb.dtcsvmapping import SimpleDetectionCsvMapping
+from validb.csvmapping import SimpleDetectionCsvMapping
 
 
 class MyMsgType(enum.Enum):
