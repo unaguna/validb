@@ -13,7 +13,7 @@ from validb import (
 )
 from validb.datasources import SQLAlchemyDataSource
 from validb.rules import SQLAlchemyRule
-from validb.dtcsvmapping import DetectionCsvMapping, SimpleDetectionCsvMapping
+from validb.dtcsvmapping import SimpleDetectionCsvMapping
 
 
 class MyMsgType(enum.Enum):
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         print(detection_data[(level, detection_type)])
 
     # Outputs anomalies as CSV
-    csv_row: DetectionCsvMapping[str, MyMsgType, str] = SimpleDetectionCsvMapping()
+    csv_row = SimpleDetectionCsvMapping()
     spamwriter = csv.writer(sys.stdout)
     spamwriter.writerows(csv_row.rows(detection_data))
 
