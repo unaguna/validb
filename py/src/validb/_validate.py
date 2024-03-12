@@ -40,7 +40,7 @@ def validate_db(
     )
 
     try:
-        for rule in rules:
+        for rule in sorted(rules, key=lambda r: r.level(), reverse=True):
             detected_list = rule.exec(datasources=datasources, detected=detected)
             detection_data.extend(detected_list)
     except TooManyDetectionException:
