@@ -44,12 +44,13 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         return self._id
 
     @property
-    def id_str(self) -> str:
+    def id_str(self) -> t.Optional[str]:
         """str expression of `self.id`
 
         Use when string representation is required, such as in CSV output.
         """
-        return str(self.id)
+        id_ = self._id
+        return str(id_) if id_ is not None else None
 
     @property
     def level(self) -> int:
@@ -65,12 +66,13 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         return self._detection_type
 
     @property
-    def detection_type_str(self) -> str:
+    def detection_type_str(self) -> t.Optional[str]:
         """str expression of `self.detection_type`
 
         Use when string representation is required, such as in CSV output.
         """
-        return str(self.detection_type)
+        detection_type = self.detection_type
+        return str(detection_type) if detection_type is not None else None
 
     @property
     def msg(self) -> MSG:
@@ -78,12 +80,13 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         return self._msg
 
     @property
-    def msg_str(self) -> str:
+    def msg_str(self) -> t.Optional[str]:
         """str expression of `self.msg`
 
         Use when string representation is required, such as in CSV output.
         """
-        return str(self.msg)
+        msg = self.msg
+        return str(msg) if msg is not None else None
 
 
 class TextDetected(Detected[str, str, str]):

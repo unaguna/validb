@@ -57,7 +57,7 @@ class DetectionCsvMapping(abc.ABC):
 class SimpleDetectionCsvMapping(DetectionCsvMapping):
     def row(
         self, detected: Detected[ID, DETECTION_TYPE, MSG]
-    ) -> t.Sequence[t.Union[str, int]]:
+    ) -> t.Sequence[t.Union[str, int, None]]:
         return [
             detected.id_str,
             detected.level,
