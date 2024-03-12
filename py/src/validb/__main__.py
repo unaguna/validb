@@ -5,6 +5,7 @@ import click
 
 from validb import validate_db
 from validb.config import load_rules_from_yaml
+from validb.dtcsvmapping import DetectionCsvMapping, SimpleDetectionCsvMapping
 
 
 @click.command()
@@ -22,10 +23,14 @@ def main(rules_path: str, dest_csv_path: t.Union[str, None]):
     if detection_data.count <= 0:
         exit(0)
     else:
+        csv_row: DetectionCsvMapping[str, str, str] = SimpleDetectionCsvMapping()
+
         if dest_csv_path is not None:
             with open(dest_csv_path, mode="w", newline="", encoding="utf_8") as fp:
                 csv_writer = csv.writer(fp)
-                csv_writer.writerows(detection_data.rows())
+                csv_writer.writerows(
+                    (csv_row(detected) for detected in detection_data.values())
+                )
 
         exit(10)
 

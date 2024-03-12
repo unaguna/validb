@@ -13,6 +13,7 @@ from validb import (
 )
 from validb.datasources import SQLAlchemyDataSource
 from validb.rules import SQLAlchemyRule
+from validb.dtcsvmapping import DetectionCsvMapping, SimpleDetectionCsvMapping
 
 
 class MyMsgType(enum.Enum):
@@ -21,16 +22,8 @@ class MyMsgType(enum.Enum):
 
 
 class MyDetected(Detected[str, MyMsgType, str]):
-    def row(self) -> t.Tuple[str, int, str, str]:
-        return (
-            self.id,
-            self.level,
-            self.detection_type.value,
-            self.msg,
-        )
-
     def __repr__(self) -> str:
-        return f"<MyDetected: {self.row()}>"
+        return f"<MyDetected: {self.id_str}, {self.detection_type_str}, {self.msg_str}>"
 
 
 class MyEmbedder(Embedder):
@@ -92,7 +85,8 @@ if __name__ == "__main__":
         print(detection_data[(level, detection_type)])
 
     # Outputs anomalies as CSV
+    csv_row: DetectionCsvMapping[str, MyMsgType, str] = SimpleDetectionCsvMapping()
     spamwriter = csv.writer(sys.stdout)
-    spamwriter.writerows(detection_data.rows())
+    spamwriter.writerows((csv_row(detected) for detected in detection_data.values()))
 
     print(f"too_many_detection={detection_data.too_many_detection}")

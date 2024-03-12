@@ -155,18 +155,3 @@ class DetectionData(t.Generic[ID, DETECTION_TYPE, MSG]):
     def values(self) -> t.Generator[Detected[ID, DETECTION_TYPE, MSG], None, None]:
         """create the iterator of detection"""
         return (detected for detected in chain(*self._by_id.values()))
-
-    def rows(self) -> t.Generator[t.Sequence[t.Any], None, None]:
-        """create the iterator of rows for CSV
-
-        One row generated corresponds to one detection.
-
-        By specifying this iterator as an argument to `csv.writer.writerows`,
-        the detected anomalies can be output in CSV format.
-
-        Returns
-        -------
-        t.Generator[t.Sequence[t.Any], None, None]
-            the iterator of rows for CSV
-        """
-        return (detected.row() for detected in self.values())

@@ -85,22 +85,12 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         """
         return str(self.msg)
 
-    @abc.abstractmethod
-    def row(self) -> t.Sequence[t.Any]:
-        pass
-
 
 class TextDetected(Detected[str, str, str]):
-    def row(self) -> t.Tuple[str, int, str, str]:
-        return (
-            self.id,
-            self.level,
-            self.detection_type,
-            self.msg,
-        )
-
     def __repr__(self) -> str:
-        return f"<TextDetected: {self.row()}>"
+        return (
+            f"<TextDetected: {self.id_str}, {self.detection_type_str}, {self.msg_str}>"
+        )
 
 
 class DetectedType(t.Protocol, t.Generic[ID, DETECTION_TYPE, MSG]):

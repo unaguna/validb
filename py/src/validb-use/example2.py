@@ -3,6 +3,7 @@ import sys
 
 from validb import validate_db
 from validb.config import load_rules_from_yaml
+from validb.dtcsvmapping import DetectionCsvMapping, SimpleDetectionCsvMapping
 
 
 if __name__ == "__main__":
@@ -39,7 +40,8 @@ if __name__ == "__main__":
         print(detection_data[(level, detection_type)])
 
     # Outputs anomalies as CSV
+    csv_row: DetectionCsvMapping[str, str, str] = SimpleDetectionCsvMapping()
     spamwriter = csv.writer(sys.stdout)
-    spamwriter.writerows(detection_data.rows())
+    spamwriter.writerows((csv_row(detected) for detected in detection_data.values()))
 
     print(f"too_many_detection={detection_data.too_many_detection}")
