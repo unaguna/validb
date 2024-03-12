@@ -44,6 +44,14 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         return self._id
 
     @property
+    def id_str(self) -> str:
+        """str expression of `self.id`
+
+        Use when string representation is required, such as in CSV output.
+        """
+        return str(self.id)
+
+    @property
     def level(self) -> int:
         """Level of detection.
 
@@ -57,9 +65,25 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         return self._detection_type
 
     @property
+    def detection_type_str(self) -> str:
+        """str expression of `self.detection_type`
+
+        Use when string representation is required, such as in CSV output.
+        """
+        return str(self.detection_type)
+
+    @property
     def msg(self) -> MSG:
         """The message"""
         return self._msg
+
+    @property
+    def msg_str(self) -> str:
+        """str expression of `self.msg`
+
+        Use when string representation is required, such as in CSV output.
+        """
+        return str(self.msg)
 
     @abc.abstractmethod
     def row(self) -> t.Sequence[t.Any]:
