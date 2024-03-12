@@ -28,9 +28,7 @@ def main(rules_path: str, dest_csv_path: t.Union[str, None]):
         if dest_csv_path is not None:
             with open(dest_csv_path, mode="w", newline="", encoding="utf_8") as fp:
                 csv_writer = csv.writer(fp)
-                csv_writer.writerows(
-                    (csv_row(detected) for detected in detection_data.values())
-                )
+                csv_writer.writerows(csv_row.rows(detection_data))
 
         exit(10)
 

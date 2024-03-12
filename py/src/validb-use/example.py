@@ -87,6 +87,6 @@ if __name__ == "__main__":
     # Outputs anomalies as CSV
     csv_row: DetectionCsvMapping[str, MyMsgType, str] = SimpleDetectionCsvMapping()
     spamwriter = csv.writer(sys.stdout)
-    spamwriter.writerows((csv_row(detected) for detected in detection_data.values()))
+    spamwriter.writerows(csv_row.rows(detection_data))
 
     print(f"too_many_detection={detection_data.too_many_detection}")
