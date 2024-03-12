@@ -44,6 +44,15 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         return self._id
 
     @property
+    def id_str(self) -> t.Optional[str]:
+        """str expression of `self.id`
+
+        Use when string representation is required, such as in CSV output.
+        """
+        id_ = self._id
+        return str(id_) if id_ is not None else None
+
+    @property
     def level(self) -> int:
         """Level of detection.
 
@@ -57,26 +66,34 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         return self._detection_type
 
     @property
+    def detection_type_str(self) -> t.Optional[str]:
+        """str expression of `self.detection_type`
+
+        Use when string representation is required, such as in CSV output.
+        """
+        detection_type = self.detection_type
+        return str(detection_type) if detection_type is not None else None
+
+    @property
     def msg(self) -> MSG:
         """The message"""
         return self._msg
 
-    @abc.abstractmethod
-    def row(self) -> t.Sequence[t.Any]:
-        pass
+    @property
+    def msg_str(self) -> t.Optional[str]:
+        """str expression of `self.msg`
+
+        Use when string representation is required, such as in CSV output.
+        """
+        msg = self.msg
+        return str(msg) if msg is not None else None
 
 
 class TextDetected(Detected[str, str, str]):
-    def row(self) -> t.Tuple[str, int, str, str]:
-        return (
-            self.id,
-            self.level,
-            self.detection_type,
-            self.msg,
-        )
-
     def __repr__(self) -> str:
-        return f"<TextDetected: {self.row()}>"
+        return (
+            f"<TextDetected: {self.id_str}, {self.detection_type_str}, {self.msg_str}>"
+        )
 
 
 class DetectedType(t.Protocol, t.Generic[ID, DETECTION_TYPE, MSG]):

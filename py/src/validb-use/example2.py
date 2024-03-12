@@ -3,6 +3,7 @@ import sys
 
 from validb import validate_db
 from validb.config import load_rules_from_yaml
+from validb.csvmapping import SimpleDetectionCsvMapping
 
 
 if __name__ == "__main__":
@@ -12,7 +13,7 @@ if __name__ == "__main__":
     # allow to import custom classes
     sys.path.append(os.path.join(os.path.dirname(__file__), "pythonpath"))
 
-    rules, datasources = load_rules_from_yaml(
+    rules, datasources, detected_csvmapping = load_rules_from_yaml(
         os.path.join(os.path.dirname(__file__), "rules_host.yml")
     )
     with datasources:
@@ -39,7 +40,12 @@ if __name__ == "__main__":
         print(detection_data[(level, detection_type)])
 
     # Outputs anomalies as CSV
+    csv_row = (
+        detected_csvmapping
+        if detected_csvmapping is not None
+        else SimpleDetectionCsvMapping()
+    )
     spamwriter = csv.writer(sys.stdout)
-    spamwriter.writerows(detection_data.rows())
+    spamwriter.writerows(csv_row.rows(detection_data))
 
     print(f"too_many_detection={detection_data.too_many_detection}")

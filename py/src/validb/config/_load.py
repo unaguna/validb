@@ -7,6 +7,7 @@ from .._classloader import (
     NonClassLoadedError,
     UnexpectedClassLoadedError,
 )
+from ..csvmapping import DetectionCsvMapping
 from ..datasources import DataSource, DataSources
 from .._embedder import Embedder
 from ..rules import SimpleSQLAlchemyRule, DEFAULT_LEVEL
@@ -15,7 +16,9 @@ from ._type import RulesFile
 
 def load_rules_from_yaml(
     filepath: t.Union[str, bytes, pathlib.Path]
-) -> t.Tuple[t.List[SimpleSQLAlchemyRule], DataSources]:
+) -> t.Tuple[
+    t.List[SimpleSQLAlchemyRule], DataSources, t.Optional[DetectionCsvMapping]
+]:
     """Load validation rules from the YAML file.
 
     Parameters
@@ -43,18 +46,27 @@ def load_rules_from_yaml(
         for datasource_name, datasource_attr in rules.get("datasources", {}).items()
     }
 
-    return [
-        SimpleSQLAlchemyRule(
-            sql=rule["sql"],
-            id_template=rule["id"],
-            level=rule.get("level", DEFAULT_LEVEL),
-            detection_type=rule["detection_type"],
-            msg=rule["msg"],
-            datasource=rule["datasource"],
-            embedders=_construct_embedders(rule.get("embedders"), embedders),
-        )
-        for rule in rules.get("rules", [])
-    ], DataSources(datasources)
+    csvmappings: t.Mapping[str, DetectionCsvMapping] = {
+        csvmapping_name: _construct_csvmapping(csvmapping_attr)
+        for csvmapping_name, csvmapping_attr in rules.get("csvmappings", {}).items()
+    }
+
+    return (
+        [
+            SimpleSQLAlchemyRule(
+                sql=rule["sql"],
+                id_template=rule["id"],
+                level=rule.get("level", DEFAULT_LEVEL),
+                detection_type=rule["detection_type"],
+                msg=rule["msg"],
+                datasource=rule["datasource"],
+                embedders=_construct_embedders(rule.get("embedders"), embedders),
+            )
+            for rule in rules.get("rules", [])
+        ],
+        DataSources(datasources),
+        csvmappings.get("detected"),
+    )
 
 
 def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
@@ -95,4 +107,22 @@ def _construct_datasource(datasource_attr: t.Mapping[str, t.Any]) -> DataSource:
     except (UnexpectedClassLoadedError, NonClassLoadedError) as e:
         raise TypeError(
             f"datasource must be instance of {DataSource.__name__}; actual loaded: {e.actual_loaded}"
+        )
+
+
+def _construct_csvmapping(
+    csvmapping_attr: t.Mapping[str, t.Any]
+) -> DetectionCsvMapping:
+    try:
+        return construct_imported_dinamically(
+            csvmapping_attr,
+            DetectionCsvMapping,
+        )
+    except IllegalPathError as e:
+        raise ValueError(
+            f"csvmapping.*.class must be a string like 'module.class'; actually specified path: {e.actual_path}"
+        )
+    except (UnexpectedClassLoadedError, NonClassLoadedError) as e:
+        raise TypeError(
+            f"csvmapping must be instance of {DetectionCsvMapping.__name__}; actual loaded: {e.actual_loaded}"
         )
