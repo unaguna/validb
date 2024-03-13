@@ -35,6 +35,15 @@ class Row:
         else:
             return self._row[key]
 
+    def get(self, key: t.Union[int, str], default: t.Any = None) -> t.Any:
+        if isinstance(key, str):
+            return self._row_mapping.get(key, default)
+        else:
+            if 0 <= key < len(self._row):
+                return self._row[key]
+            else:
+                return default
+
     @property
     def sequence(self) -> t.Sequence[t.Any]:
         return self._row
@@ -44,7 +53,7 @@ class Row:
         return self._row_mapping
 
     def extended(
-        self, extender: t.Union[t.Sequence[RowExtender], RowExtender]
+        self, extender: t.Union[t.Iterable[RowExtender], RowExtender]
     ) -> "Row":
         """Returns a Row extended by applying the specified extenders.
 
@@ -60,7 +69,7 @@ class Row:
         Row
             a Row extended by applying the specified extenders
         """
-        if not isinstance(extender, t.Sequence):
+        if not isinstance(extender, t.Iterable):
             return self.extended([extender])
 
         current_kw_vars = self.mapping

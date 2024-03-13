@@ -78,7 +78,10 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         return self._detection_type
 
     def message(self, row: Row) -> MSG:
-        return self._msg(row.extended(self._embedders))
+        return self._msg(row)
+
+    def embedders(self) -> t.Iterator[Embedder]:
+        return iter(self._embedders)
 
     @property
     def datasource_name(self) -> str:
@@ -159,5 +162,4 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
         return self._id_template.format(*row.sequence, **row.mapping)
 
     def _get_message(self, row: Row) -> str:
-        final_row = row.extended(self._embedders)
-        return self._msg_template.format(*final_row.sequence, **final_row.mapping)
+        return self._msg_template.format(*row.sequence, **row.mapping)

@@ -2,6 +2,7 @@ import abc
 import typing as t
 
 from ..datasources import DataSources
+from .._embedder import Embedder
 from .._row import Row
 from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 
@@ -65,6 +66,14 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
+    def embedders(self) -> t.Iterator[Embedder]:
+        """an iterator of the embedders registered in self
+
+        The variables used to create Detected instances while detecting anomalies are extended using these embedders.
+        """
+        pass
+
+    @abc.abstractmethod
     def exec(
         self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
     ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
@@ -90,10 +99,28 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     def detect(
         self, row: Row, constructor: DetectedType[ID, DETECTION_TYPE, MSG]
     ) -> Detected[ID, DETECTION_TYPE, MSG]:
-        """construct Detected instance"""
+        """construct Detected instance
+
+        Parameters
+        ----------
+        row : Row
+            Variables obtained in the process of detection.
+            In this function, the variable is extended with embedders registered in self before use.
+        constructor : DetectedType
+            the constructor of Detected
+
+        Returns
+        -------
+        Detected
+            an abnormality detection
+        """
+        # Extend variables using embedder registered in self
+        row = row.extended(self.embedders())
+
         return constructor(
             self.id_of_row(row),
             self.level(),
             self.detection_type(),
             self.message(row),
+            row,
         )
