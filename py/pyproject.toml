@@ -10,7 +10,8 @@ version = { attr = "validb.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["validb"]
+include = ["validb*"]
+exclude = ["validb-use*"]
 
 [project]
 name = "validb"
