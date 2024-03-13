@@ -24,9 +24,8 @@ class TodayEmbedder(Embedder):
 class MyDetectionCsvMapping(DetectionCsvMapping):
     def row(self, detected: Detected[t.Any, t.Any, t.Any]) -> t.Sequence[t.Any]:
         return [
-            "!",
             detected.id_str,
-            detected.embedded_vars.get("Population"),
+            detected.embedded_vars.get("today"),
             detected.level,
             detected.detection_type_str,
             detected.msg_str,
