@@ -2,7 +2,8 @@ import abc
 import typing as t
 
 from ..datasources import DataSources
-from .._row import Row
+from .._embedder import Embedder
+from .._embedded_vars import EmbeddedVariables
 from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 
 
@@ -19,7 +20,7 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
-    def id_of_row(self, row: Row) -> ID:
+    def id_of_row(self, embedded_vars: EmbeddedVariables) -> ID:
         """The function to calc the record ID from each row of SQL result.
 
         This ID is used to determine which record in the DB has the abnormality,
@@ -27,8 +28,8 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
 
         Parameters
         ----------
-        row : Row
-            each row of a result of SQL execution
+        embedded_vars : EmbeddedVariables
+            variables according to a result of SQL execution
 
         Returns
         -------
@@ -54,13 +55,21 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
-    def message(self, row: Row) -> MSG:
+    def message(self, embedded_vars: EmbeddedVariables) -> MSG:
         """Message to be used when an abnormality is detected.
 
         Parameters
         ----------
-        row : Row
-            each row of a result of SQL execution
+        embedded_vars : EmbeddedVariables
+            variables according to a result of SQL execution
+        """
+        pass
+
+    @abc.abstractmethod
+    def embedders(self) -> t.Iterator[Embedder]:
+        """an iterator of the embedders registered in self
+
+        The variables used to create Detected instances while detecting anomalies are extended using these embedders.
         """
         pass
 
@@ -88,12 +97,32 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         ...
 
     def detect(
-        self, row: Row, constructor: DetectedType[ID, DETECTION_TYPE, MSG]
+        self,
+        embedded_vars: EmbeddedVariables,
+        constructor: DetectedType[ID, DETECTION_TYPE, MSG],
     ) -> Detected[ID, DETECTION_TYPE, MSG]:
-        """construct Detected instance"""
+        """construct Detected instance
+
+        Parameters
+        ----------
+        embedded_vars : EmbeddedVariables
+            Variables obtained in the process of detection.
+            In this function, the variable is extended with embedders registered in self before use.
+        constructor : DetectedType
+            the constructor of Detected
+
+        Returns
+        -------
+        Detected
+            an abnormality detection
+        """
+        # Extend variables using embedder registered in self
+        embedded_vars = embedded_vars.extended(self.embedders())
+
         return constructor(
-            self.id_of_row(row),
+            self.id_of_row(embedded_vars),
             self.level(),
             self.detection_type(),
-            self.message(row),
+            self.message(embedded_vars),
+            embedded_vars,
         )

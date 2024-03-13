@@ -22,3 +22,6 @@ datasources:
   mysql:
     class: validb.datasources.SQLAlchemyDataSource
     url: "mysql+pymysql://?read_default_file=./validb-use/my.cnf"
+csvmappings:
+  detected:
+    class: custom.MyDetectionCsvMapping

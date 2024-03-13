@@ -4,7 +4,7 @@ from sqlalchemy.sql import text
 
 from ..datasources import DataSources, SQLAlchemyDataSource
 from .._embedder import Embedder
-from .._row import Row
+from .._embedded_vars import EmbeddedVariables
 from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 from ._rule import Rule
 
@@ -13,20 +13,20 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     """validation rule definition"""
 
     _sql: str
-    _id_of_row: t.Callable[[Row], ID]
+    _id_of_row: t.Callable[[EmbeddedVariables], ID]
     _level: int
     _detection_type: DETECTION_TYPE
-    _msg: t.Callable[[Row], MSG]
+    _msg: t.Callable[[EmbeddedVariables], MSG]
     _datasource: str
     _embedders: t.Sequence[Embedder]
 
     def __init__(
         self,
         sql: str,
-        id_of_row: t.Callable[[Row], ID],
+        id_of_row: t.Callable[[EmbeddedVariables], ID],
         level: int,
         detection_type: DETECTION_TYPE,
-        msg: t.Callable[[Row], MSG],
+        msg: t.Callable[[EmbeddedVariables], MSG],
         datasource: str,
         embedders: t.Optional[t.Sequence[Embedder]] = None,
     ) -> None:
@@ -38,7 +38,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         ----------
         sql : str
             query to be executed to detect anomalies
-        id_of_row : t.Callable[[sqlalchemy.Row], ID]
+        id_of_row : Callable[[EmbeddedVariables], ID]
             the function to calc the record ID from each row of SQL result;
             This ID is used to determine which record in the DB has the abnormality,
             so the ID is usually created from the primary key.
@@ -68,8 +68,8 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     def sql(self) -> str:
         return self._sql
 
-    def id_of_row(self, row: Row) -> ID:
-        return self._id_of_row(row)
+    def id_of_row(self, embedded_vars: EmbeddedVariables) -> ID:
+        return self._id_of_row(embedded_vars)
 
     def level(self) -> int:
         return self._level
@@ -77,8 +77,11 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     def detection_type(self) -> DETECTION_TYPE:
         return self._detection_type
 
-    def message(self, row: Row) -> MSG:
-        return self._msg(row.extended(self._embedders))
+    def message(self, embedded_vars: EmbeddedVariables) -> MSG:
+        return self._msg(embedded_vars)
+
+    def embedders(self) -> t.Iterator[Embedder]:
+        return iter(self._embedders)
 
     @property
     def datasource_name(self) -> str:
@@ -97,7 +100,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
 
         sql_result = datasource.session.execute(sql)
         return [
-            self.detect(Row.from_sqlalchemy(row), constructor=detected)
+            self.detect(EmbeddedVariables.from_sqlalchemy(row), constructor=detected)
             for row in sql_result
         ]
 
@@ -155,9 +158,12 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
         self._id_template = id_template
         self._msg_template = msg
 
-    def _get_id_of_row(self, row: Row) -> str:
-        return self._id_template.format(*row.sequence, **row.mapping)
+    def _get_id_of_row(self, embedded_vars: EmbeddedVariables) -> str:
+        return self._id_template.format(
+            *embedded_vars.sequence, **embedded_vars.mapping
+        )
 
-    def _get_message(self, row: Row) -> str:
-        final_row = row.extended(self._embedders)
-        return self._msg_template.format(*final_row.sequence, **final_row.mapping)
+    def _get_message(self, embedded_vars: EmbeddedVariables) -> str:
+        return self._msg_template.format(
+            *embedded_vars.sequence, **embedded_vars.mapping
+        )

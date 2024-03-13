@@ -9,7 +9,12 @@
       "type": "debugpy",
       "request": "launch",
       "module": "validb",
-      "args": ["-r", "${workspaceFolder}/py/src/validb-use/rules_host.yml"],
+      "args": [
+        "-r",
+        "${workspaceFolder}/py/src/validb-use/rules_host.yml",
+        "-D",
+        "${workspaceFolder}/env/detected.csv"
+      ],
       "cwd": "${workspaceFolder}/py/src",
       "env": {
         "PYTHONPATH": "${workspaceRoot}/py/src/validb-use/pythonpath;${workspaceRoot}/py/src;${env:PYTHONPATH}"
