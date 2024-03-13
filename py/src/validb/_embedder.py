@@ -1,10 +1,10 @@
 import abc
 import typing as t
 
-from ._row import RowExtender
+from ._row import EmbeddedVariablesExtender
 
 
-class Embedder(RowExtender, abc.ABC):
+class Embedder(EmbeddedVariablesExtender, abc.ABC):
     """Embedding Variable Generator"""
 
     def extend(

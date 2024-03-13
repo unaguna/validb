@@ -1,7 +1,7 @@
 import abc
 import typing as t
 
-from ._row import Row
+from ._row import EmbeddedVariables
 
 
 ID = t.TypeVar("ID")
@@ -16,7 +16,7 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     _level: int
     _detection_type: DETECTION_TYPE
     _msg: MSG
-    _row: Row
+    _embedded_vars: EmbeddedVariables
 
     def __init__(
         self,
@@ -24,7 +24,7 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         level: int,
         detection_type: DETECTION_TYPE,
         msg: MSG,
-        row: Row,
+        embedded_vars: EmbeddedVariables,
     ) -> None:
         """create detection object
 
@@ -40,14 +40,14 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
             Type of anomaly detected.
         msg : MSG
             The message.
-        row : Row
+        embedded_vars : EmbeddedVariables
             variables embedded while the detection
         """
         self._id = id
         self._level = level
         self._detection_type = detection_type
         self._msg = msg
-        self._row = row
+        self._embedded_vars = embedded_vars
 
     @property
     def id(self) -> ID:
@@ -100,9 +100,9 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         return str(msg) if msg is not None else None
 
     @property
-    def embedded_vars(self) -> Row:
+    def embedded_vars(self) -> EmbeddedVariables:
         """variables embedded while detection"""
-        return self._row
+        return self._embedded_vars
 
 
 class TextDetected(Detected[str, str, str]):
@@ -114,5 +114,10 @@ class TextDetected(Detected[str, str, str]):
 
 class DetectedType(t.Protocol, t.Generic[ID, DETECTION_TYPE, MSG]):
     def __call__(
-        self, id: ID, level: int, detection_type: DETECTION_TYPE, msg: MSG, row: Row
+        self,
+        id: ID,
+        level: int,
+        detection_type: DETECTION_TYPE,
+        msg: MSG,
+        embedded_vars: EmbeddedVariables,
     ) -> Detected[ID, DETECTION_TYPE, MSG]: ...

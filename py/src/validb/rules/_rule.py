@@ -3,7 +3,7 @@ import typing as t
 
 from ..datasources import DataSources
 from .._embedder import Embedder
-from .._row import Row
+from .._row import EmbeddedVariables
 from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 
 
@@ -20,7 +20,7 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
-    def id_of_row(self, row: Row) -> ID:
+    def id_of_row(self, embedded_vars: EmbeddedVariables) -> ID:
         """The function to calc the record ID from each row of SQL result.
 
         This ID is used to determine which record in the DB has the abnormality,
@@ -28,8 +28,8 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
 
         Parameters
         ----------
-        row : Row
-            each row of a result of SQL execution
+        embedded_vars : EmbeddedVariables
+            variables according to a result of SQL execution
 
         Returns
         -------
@@ -55,13 +55,13 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
-    def message(self, row: Row) -> MSG:
+    def message(self, embedded_vars: EmbeddedVariables) -> MSG:
         """Message to be used when an abnormality is detected.
 
         Parameters
         ----------
-        row : Row
-            each row of a result of SQL execution
+        embedded_vars : EmbeddedVariables
+            variables according to a result of SQL execution
         """
         pass
 
@@ -97,13 +97,15 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         ...
 
     def detect(
-        self, row: Row, constructor: DetectedType[ID, DETECTION_TYPE, MSG]
+        self,
+        embedded_vars: EmbeddedVariables,
+        constructor: DetectedType[ID, DETECTION_TYPE, MSG],
     ) -> Detected[ID, DETECTION_TYPE, MSG]:
         """construct Detected instance
 
         Parameters
         ----------
-        row : Row
+        embedded_vars : EmbeddedVariables
             Variables obtained in the process of detection.
             In this function, the variable is extended with embedders registered in self before use.
         constructor : DetectedType
@@ -115,12 +117,12 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
             an abnormality detection
         """
         # Extend variables using embedder registered in self
-        row = row.extended(self.embedders())
+        embedded_vars = embedded_vars.extended(self.embedders())
 
         return constructor(
-            self.id_of_row(row),
+            self.id_of_row(embedded_vars),
             self.level(),
             self.detection_type(),
-            self.message(row),
-            row,
+            self.message(embedded_vars),
+            embedded_vars,
         )

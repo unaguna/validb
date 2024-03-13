@@ -4,70 +4,73 @@ import typing as t
 import sqlalchemy
 
 
-class RowExtender(abc.ABC):
+class EmbeddedVariablesExtender(abc.ABC):
     @abc.abstractmethod
     def extend(
         self, vars: t.Sequence[t.Any], kw_vars: t.Mapping[str, t.Any]
     ) -> t.Mapping[str, t.Any]: ...
 
 
-class Row:
-    _row: t.Sequence[t.Any]
-    _row_mapping: t.Mapping[str, t.Any]
+class EmbeddedVariables:
+    _sequence: t.Sequence[t.Any]
+    _mapping: t.Mapping[str, t.Any]
 
     def __init__(self, seq: t.Sequence[t.Any], mapping: t.Mapping[str, t.Any]):
-        self._row = seq
-        self._row_mapping = mapping
+        self._sequence = seq
+        self._mapping = mapping
 
     @classmethod
-    def from_sqlalchemy(cls, row: sqlalchemy.Row[t.Any]) -> "Row":
-        return Row(
+    def from_sqlalchemy(cls, row: sqlalchemy.Row[t.Any]) -> "EmbeddedVariables":
+        return EmbeddedVariables(
             row,
             row._mapping,  # type: ignore
         )
 
     def __len__(self) -> int:
-        return len(self._row)
+        return len(self._sequence)
 
     def __getitem__(self, key: t.Union[int, str]) -> t.Any:
         if isinstance(key, str):
-            return self._row_mapping[key]
+            return self._mapping[key]
         else:
-            return self._row[key]
+            return self._sequence[key]
 
     def get(self, key: t.Union[int, str], default: t.Any = None) -> t.Any:
         if isinstance(key, str):
-            return self._row_mapping.get(key, default)
+            return self._mapping.get(key, default)
         else:
-            if 0 <= key < len(self._row):
-                return self._row[key]
+            if 0 <= key < len(self._sequence):
+                return self._sequence[key]
             else:
                 return default
 
     @property
     def sequence(self) -> t.Sequence[t.Any]:
-        return self._row
+        return self._sequence
 
     @property
     def mapping(self) -> t.Mapping[str, t.Any]:
-        return self._row_mapping
+        return self._mapping
 
     def extended(
-        self, extender: t.Union[t.Iterable[RowExtender], RowExtender]
-    ) -> "Row":
-        """Returns a Row extended by applying the specified extenders.
+        self,
+        extender: t.Union[
+            t.Iterable[EmbeddedVariablesExtender], EmbeddedVariablesExtender
+        ],
+    ) -> "EmbeddedVariables":
+        """Returns variables extended by applying the specified extenders.
 
         This method is non-destructive and creates a new instance that is different from self.
 
         Parameters
         ----------
-        extender : Sequence[RowExtender] | RowExtender
+        extender : Iterator[EmbeddedVariablesExtender] | EmbeddedVariablesExtender
             extenders
 
         Returns
         -------
-        Row
-            a Row extended by applying the specified extenders
+        EmbeddedVariables
+            variables extended by applying the specified extenders
         """
         if not isinstance(extender, t.Iterable):
             return self.extended([extender])
@@ -76,4 +79,4 @@ class Row:
         for ex in extender:
             current_kw_vars = ex.extend(self.sequence, current_kw_vars)
 
-        return Row(self.sequence, current_kw_vars)
+        return EmbeddedVariables(self.sequence, current_kw_vars)

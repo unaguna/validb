@@ -1,6 +1,6 @@
 from .datasources import DataSource, DataSources
 from ._detected import Detected, TextDetected
-from ._row import Row
+from ._row import EmbeddedVariables
 from .csvmapping import DetectionCsvMapping
 from ._embedder import Embedder
 from ._detectiondata import DetectionData
@@ -14,7 +14,7 @@ __all__ = [
     "Detected",
     "DetectionData",
     "Embedder",
-    "Row",
+    "EmbeddedVariables",
     "Rule",
     "TextDetected",
     "validate_db",
