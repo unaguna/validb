@@ -96,4 +96,5 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
             self.level(),
             self.detection_type(),
             self.message(row),
+            row,
         )
