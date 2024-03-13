@@ -67,7 +67,10 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
 
     @abc.abstractmethod
     def embedders(self) -> t.Iterator[Embedder]:
-        """an iterator of the embedders to embed variables"""
+        """an iterator of the embedders registered in self
+
+        The variables used to create Detected instances while detecting anomalies are extended using these embedders.
+        """
         pass
 
     @abc.abstractmethod
@@ -96,7 +99,22 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     def detect(
         self, row: Row, constructor: DetectedType[ID, DETECTION_TYPE, MSG]
     ) -> Detected[ID, DETECTION_TYPE, MSG]:
-        """construct Detected instance"""
+        """construct Detected instance
+
+        Parameters
+        ----------
+        row : Row
+            Variables obtained in the process of detection.
+            In this function, the variable is extended with embedders registered in self before use.
+        constructor : DetectedType
+            the constructor of Detected
+
+        Returns
+        -------
+        Detected
+            an abnormality detection
+        """
+        # Extend variables using embedder registered in self
         row = row.extended(self.embedders())
 
         return constructor(
