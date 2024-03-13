@@ -1,7 +1,7 @@
 import abc
 import typing as t
 
-from ._row import EmbeddedVariables
+from ._embedded_vars import EmbeddedVariables
 
 
 ID = t.TypeVar("ID")

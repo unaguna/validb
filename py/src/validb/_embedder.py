@@ -1,7 +1,7 @@
 import abc
 import typing as t
 
-from ._row import EmbeddedVariablesExtender
+from ._embedded_vars import EmbeddedVariablesExtender
 
 
 class Embedder(EmbeddedVariablesExtender, abc.ABC):

@@ -4,7 +4,7 @@ from sqlalchemy.sql import text
 
 from ..datasources import DataSources, SQLAlchemyDataSource
 from .._embedder import Embedder
-from .._row import EmbeddedVariables
+from .._embedded_vars import EmbeddedVariables
 from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 from ._rule import Rule
 

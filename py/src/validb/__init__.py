@@ -1,6 +1,6 @@
 from .datasources import DataSource, DataSources
 from ._detected import Detected, TextDetected
-from ._row import EmbeddedVariables
+from ._embedded_vars import EmbeddedVariables
 from .csvmapping import DetectionCsvMapping
 from ._embedder import Embedder
 from ._detectiondata import DetectionData
