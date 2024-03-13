@@ -8,7 +8,7 @@ class Embedder(EmbeddedVariablesExtender, abc.ABC):
     """Embedding Variable Generator"""
 
     def extend(
-        self, vars: t.Sequence[t.Any], kw_vars: t.Mapping[str, t.Any]
+        self, vars_seq: t.Sequence[t.Any], vars_map: t.Mapping[str, t.Any]
     ) -> t.Mapping[str, t.Any]:
         """generate embedding variables
 
@@ -18,15 +18,15 @@ class Embedder(EmbeddedVariablesExtender, abc.ABC):
 
         Parameters
         ----------
-        vars : t.Sequence[t.Any]
+        vars_seq : Sequence[Any]
             position variables in the process of variable generation.
-        kw_vars : t.Mapping[str, t.Any]
+        vars_map : Mapping[str, Any]
             keyword variables in the process of variable generation.
 
         Returns
         -------
-        t.Mapping[str, t.Any]
+        t.Mapping[str, Any]
             generated keyword variables;
-            It is usually a dictionary with some fields added to the argument `kw_vars`.
+            It is usually a dictionary with some fields added to the argument `vars_map`.
         """
-        return kw_vars
+        return vars_map

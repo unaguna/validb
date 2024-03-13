@@ -28,9 +28,9 @@ class MyDetected(Detected[str, MyMsgType, str]):
 
 class MyEmbedder(Embedder):
     def extend(
-        self, vars: t.Sequence[t.Any], kw_vars: t.Mapping[str, t.Any]
+        self, vars_seq: t.Sequence[t.Any], vars_map: t.Mapping[str, t.Any]
     ) -> t.Mapping[str, t.Any]:
-        return {**kw_vars, "today": dt.date.today()}
+        return {**vars_map, "today": dt.date.today()}
 
 
 rules: t.List[Rule[str, MyMsgType, str]] = [

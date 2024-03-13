@@ -7,7 +7,7 @@ import sqlalchemy
 class EmbeddedVariablesExtender(abc.ABC):
     @abc.abstractmethod
     def extend(
-        self, vars: t.Sequence[t.Any], kw_vars: t.Mapping[str, t.Any]
+        self, vars_seq: t.Sequence[t.Any], vars_map: t.Mapping[str, t.Any]
     ) -> t.Mapping[str, t.Any]: ...
 
 
@@ -75,8 +75,8 @@ class EmbeddedVariables:
         if not isinstance(extender, t.Iterable):
             return self.extended([extender])
 
-        current_kw_vars = self.mapping
+        current_vars_map = self.mapping
         for ex in extender:
-            current_kw_vars = ex.extend(self.sequence, current_kw_vars)
+            current_vars_map = ex.extend(self.sequence, current_vars_map)
 
-        return EmbeddedVariables(self.sequence, current_kw_vars)
+        return EmbeddedVariables(self.sequence, current_vars_map)
