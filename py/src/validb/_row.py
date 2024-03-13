@@ -35,6 +35,15 @@ class Row:
         else:
             return self._row[key]
 
+    def get(self, key: t.Union[int, str], default: t.Any = None) -> t.Any:
+        if isinstance(key, str):
+            return self._row_mapping.get(key, default)
+        else:
+            if 0 <= key < len(self._row):
+                return self._row[key]
+            else:
+                return default
+
     @property
     def sequence(self) -> t.Sequence[t.Any]:
         return self._row

@@ -99,6 +99,11 @@ class Detected(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         msg = self.msg
         return str(msg) if msg is not None else None
 
+    @property
+    def embedded_vars(self) -> Row:
+        """variables embedded while detection"""
+        return self._row
+
 
 class TextDetected(Detected[str, str, str]):
     def __repr__(self) -> str:

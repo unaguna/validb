@@ -26,6 +26,7 @@ class MyDetectionCsvMapping(DetectionCsvMapping):
         return [
             "!",
             detected.id_str,
+            detected.embedded_vars.get("Population"),
             detected.level,
             detected.detection_type_str,
             detected.msg_str,
