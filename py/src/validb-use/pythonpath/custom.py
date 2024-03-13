@@ -13,10 +13,10 @@ class TodayEmbedder(Embedder):
         self._shift = dt.timedelta(days=shift)
 
     def extend(
-        self, vars: t.Sequence[t.Any], kw_vars: t.Mapping[str, t.Any]
+        self, vars_seq: t.Sequence[t.Any], vars_map: t.Mapping[str, t.Any]
     ) -> t.Mapping[str, t.Any]:
         return {
-            **kw_vars,
+            **vars_map,
             self._key_name: dt.date.today() + self._shift,
         }
 
