@@ -14,7 +14,7 @@ class RuleDef(RuleDefRequired, total=False):
     embedders: t.List[str]
 
 
-class RulesFile(t.TypedDict, total=False):
+class ConfigFile(t.TypedDict, total=False):
     rules: t.Sequence[RuleDef]
     embedders: t.Mapping[str, t.Any]
     datasources: t.Mapping[str, t.Any]
