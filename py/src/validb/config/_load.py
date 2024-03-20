@@ -15,10 +15,8 @@ from ._type import RulesFile
 from ._config import Config
 
 
-def load_rules_from_yaml(
-    filepath: t.Union[str, bytes, pathlib.Path]
-) -> Config[str, str, str]:
-    """Load validation rules from the YAML file.
+def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str, str]:
+    """Load validation config from the YAML file.
 
     Parameters
     ----------

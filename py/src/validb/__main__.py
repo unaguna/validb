@@ -4,7 +4,7 @@ import typing as t
 import click
 
 from validb import validate_db
-from validb.config import load_rules_from_yaml
+from validb.config import load_config
 from validb.csvmapping import SimpleDetectionCsvMapping
 
 
@@ -14,7 +14,7 @@ from validb.csvmapping import SimpleDetectionCsvMapping
 )
 @click.option("--dest-csv", "-D", "dest_csv_path", type=click.Path())
 def main(rules_path: str, dest_csv_path: t.Union[str, None]):
-    config = load_rules_from_yaml(rules_path)
+    config = load_config(rules_path)
 
     with config.datasources:
         detection_data = validate_db(rules=config.rules, datasources=config.datasources)
