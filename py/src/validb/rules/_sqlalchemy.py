@@ -19,7 +19,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     _detection_type: DETECTION_TYPE
     _msg: t.Callable[[EmbeddedVariables], MSG]
     _datasource: str
-    _embedders: t.Sequence[Embedder]
+    _embedders: t.Sequence[str]
 
     def __init__(
         self,
@@ -29,7 +29,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[EmbeddedVariables], MSG],
         datasource: str,
-        embedders: t.Optional[t.Sequence[Embedder]] = None,
+        embedders: t.Optional[t.Sequence[str]] = None,
     ) -> None:
         """create a validation rule
 
@@ -81,7 +81,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     def message(self, embedded_vars: EmbeddedVariables) -> MSG:
         return self._msg(embedded_vars)
 
-    def embedders(self) -> t.Iterator[Embedder]:
+    def embedders(self) -> t.Iterator[str]:
         return iter(self._embedders)
 
     @property
@@ -89,7 +89,11 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         return self._datasource
 
     def exec(
-        self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
+        self,
+        *,
+        datasources: DataSources,
+        detected: DetectedType[ID, DETECTION_TYPE, MSG],
+        embedders: t.Mapping[str, Embedder],
     ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
         datasource = datasources[self.datasource_name]
         if not isinstance(datasource, SQLAlchemyDataSource):
@@ -101,7 +105,11 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
 
         sql_result = datasource.session.execute(sql)
         return [
-            self.detect(EmbeddedVariables.from_sqlalchemy(row), constructor=detected)
+            self.detect(
+                embedded_vars=EmbeddedVariables.from_sqlalchemy(row),
+                constructor=detected,
+                embedders=embedders,
+            )
             for row in sql_result
         ]
 
@@ -119,7 +127,7 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
         detection_type: str,
         msg: str,
         datasource: str,
-        embedders: t.Optional[t.Sequence[Embedder]] = None,
+        embedders: t.Optional[t.Sequence[str]] = None,
     ) -> None:
         """create a validation rule
 

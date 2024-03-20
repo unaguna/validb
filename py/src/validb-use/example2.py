@@ -18,6 +18,7 @@ if __name__ == "__main__":
         detection_data = validate_db(
             rules=config.rules,
             datasources=config.datasources,
+            embedders=config.embedders,
         )
 
     # Outputs a summary of anomalies per record

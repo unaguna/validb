@@ -49,7 +49,7 @@ def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str,
     }
 
     return Config(
-        [
+        rules=[
             SimpleSQLAlchemyRule(
                 sql=rule["sql"],
                 id_template=rule["id"],
@@ -57,12 +57,13 @@ def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str,
                 detection_type=rule["detection_type"],
                 msg=rule["msg"],
                 datasource=rule["datasource"],
-                embedders=_construct_embedders(rule.get("embedders"), embedders),
+                embedders=rule.get("embedders"),
             )
             for rule in config_dict.get("rules", [])
         ],
-        DataSources(datasources),
-        csvmappings.get("detected"),
+        datasources=DataSources(datasources),
+        detected_csvmapping=csvmappings.get("detected"),
+        embedders=embedders,
     )
 
 
@@ -80,15 +81,6 @@ def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
         raise TypeError(
             f"embedder must be instance of {Embedder.__name__}; actual loaded: {e.actual_loaded}"
         )
-
-
-def _construct_embedders(
-    embedders: t.Optional[t.Sequence[str]], embedder_instances: t.Mapping[str, Embedder]
-) -> t.Optional[t.Sequence[Embedder]]:
-    if embedders is None:
-        return None
-
-    return [embedder_instances[embedder_name] for embedder_name in embedders]
 
 
 def _construct_datasource(datasource_attr: t.Mapping[str, t.Any]) -> DataSource:
