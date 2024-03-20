@@ -9,7 +9,7 @@ rules:
     id: "{Code}"
     level: 1
     detection_type: "TOO_SMALL"
-    msg: "too small!; SurfaceArea={1}, Population={Population}"
+    msg: "too small!; SurfaceArea={1}, Population={Population}, aaa={aaa}, 100={100}"
     datasource: "mysql"
 embedders:
   today_embedder:
