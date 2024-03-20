@@ -4,7 +4,7 @@ import typing as t
 import click
 
 from validb import validate_db, DetectionData
-from validb.config import load_config
+from validb.config import load_config, Config
 from validb.csvmapping import SimpleDetectionCsvMapping
 
 
@@ -31,16 +31,8 @@ def main(config_path: str, dest_csv_path: t.Union[str, None]):
         click.echo()
         click.echo(f"Detected: {detection_data.count}")
 
-        detected_csvmapping = (
-            config.detected_csvmapping
-            if config.detected_csvmapping is not None
-            else SimpleDetectionCsvMapping()
-        )
-
         if dest_csv_path is not None:
-            with open(dest_csv_path, mode="w", newline="", encoding="utf_8") as fp:
-                csv_writer = csv.writer(fp)
-                csv_writer.writerows(detected_csvmapping.rows(detection_data))
+            _output_csv(dest_csv_path, detection_data, config)
 
         exit(10)
 
@@ -62,6 +54,22 @@ def _output_summary(detection_data: DetectionData[str, str, str]):
                 format(count, f">{max_count_len}"),
             )
         )
+
+
+def _output_csv(
+    dest_csv_path: str,
+    detection_data: DetectionData[str, str, str],
+    config: Config[str, str, str],
+):
+    detected_csvmapping = (
+        config.detected_csvmapping
+        if config.detected_csvmapping is not None
+        else SimpleDetectionCsvMapping()
+    )
+
+    with open(dest_csv_path, mode="w", newline="", encoding="utf_8") as fp:
+        csv_writer = csv.writer(fp)
+        csv_writer.writerows(detected_csvmapping.rows(detection_data))
 
 
 if __name__ == "__main__":
