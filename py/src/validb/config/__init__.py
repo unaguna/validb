@@ -1,5 +1,7 @@
-from ._load import load_rules_from_yaml
+from ._config import Config
+from ._load import load_config
 
 __all__ = [
-    "load_rules_from_yaml",
+    "Config",
+    "load_config",
 ]

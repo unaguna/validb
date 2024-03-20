@@ -11,8 +11,8 @@ from validb import (
     Rule,
     validate_db,
 )
-from validb.datasources import SQLAlchemyDataSource
-from validb.rules import SQLAlchemyRule
+from validb.datasources.sqlalchemy import SQLAlchemyDataSource
+from validb.rules.sqlalchemy import SQLAlchemyRule
 from validb.csvmapping import SimpleDetectionCsvMapping
 
 
@@ -41,7 +41,7 @@ rules: t.List[Rule[str, MyMsgType, str]] = [
         MyMsgType.NULL_YEAR,
         lambda r: f"null year; today={r['today']}",
         datasource="mysql",
-        embedders=[MyEmbedder()],
+        embedders=["today"],
     ),
     SQLAlchemyRule(
         "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population",
@@ -57,6 +57,10 @@ rules: t.List[Rule[str, MyMsgType, str]] = [
 if __name__ == "__main__":
     import csv
 
+    embedders = {
+        "today": MyEmbedder(),
+    }
+
     with DataSources(
         {"mysql": SQLAlchemyDataSource(url=os.environ["DEV_DB_URL"])}
     ) as datasources:
@@ -64,6 +68,7 @@ if __name__ == "__main__":
             rules=rules,
             detected=MyDetected,
             datasources=datasources,
+            embedders=embedders,
             max_detection=None,
         )
 

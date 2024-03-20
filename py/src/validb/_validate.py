@@ -1,6 +1,7 @@
 import typing as t
 
 
+from ._embedder import Embedder
 from .datasources import DataSources
 from ._detected import DetectedType, ID, MSG, DETECTION_TYPE, TextDetected
 from ._detectiondata import DetectionData, TooManyDetectionException
@@ -12,6 +13,7 @@ def validate_db(
     rules: t.Collection[Rule[ID, DETECTION_TYPE, MSG]],
     detected: DetectedType[ID, DETECTION_TYPE, MSG] = TextDetected,
     datasources: DataSources,
+    embedders: t.Mapping[str, Embedder],
     max_detection: t.Optional[int] = None,
 ) -> DetectionData[ID, DETECTION_TYPE, MSG]:
     """Validate data in the database.
@@ -25,6 +27,10 @@ def validate_db(
         Typically, it is sufficient to specify the subclass itself of Detected.
     datasources : DataSources
         datasources
+    embedders : Mapping[str, Embedder]
+        Embedder that can be used.
+        The rules can use any one of these Embedders, or none of them.
+        Usually, each rule has its own Embedder.
     max_detection : int, optional
         maximum number of detections.
         More detections than the specified number is ignored.
@@ -41,7 +47,9 @@ def validate_db(
 
     try:
         for rule in sorted(rules, key=lambda r: r.level(), reverse=True):
-            detected_list = rule.exec(datasources=datasources, detected=detected)
+            detected_list = rule.exec(
+                datasources=datasources, detected=detected, embedders=embedders
+            )
             detection_data.extend(detected_list)
     except TooManyDetectionException:
         pass
