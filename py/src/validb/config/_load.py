@@ -11,7 +11,7 @@ from ..csvmapping import DetectionCsvMapping
 from ..datasources import DataSource, DataSources
 from .._embedder import Embedder
 from ..rules import SimpleSQLAlchemyRule, DEFAULT_LEVEL
-from ._type import RulesFile
+from ._type import ConfigFile
 from ._config import Config
 
 
@@ -31,7 +31,7 @@ def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str,
     import yaml
 
     with open(filepath, mode="r") as fp:
-        rules: RulesFile = yaml.safe_load(fp)
+        rules: ConfigFile = yaml.safe_load(fp)
 
     embedders: t.MutableMapping[str, Embedder] = {
         embedder_name: _construct_embedder(embedder_attr)
