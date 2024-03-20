@@ -22,7 +22,7 @@ embedders:
     shift: -1
 datasources:
   mysql:
-    class: validb.datasources.SQLAlchemyDataSource
+    class: validb.datasources.sqlalchemy.SQLAlchemyDataSource
     url: "mysql+pymysql://?read_default_file=./validb-use/host_my.cnf"
 csvmappings:
   detected:
