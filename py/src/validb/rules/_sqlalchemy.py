@@ -6,7 +6,7 @@ from ..datasources import DataSources, SQLAlchemyDataSource
 from .._embedder import Embedder
 from .._embedded_vars import EmbeddedVariables
 from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
-from ._rule import Rule
+from ._rule import Rule, DEFAULT_LEVEL
 from ..formatter import MessageFormatter
 
 
@@ -19,7 +19,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     _detection_type: DETECTION_TYPE
     _msg: t.Callable[[EmbeddedVariables], MSG]
     _datasource: str
-    _embedders: t.Sequence[Embedder]
+    _embedders: t.Sequence[str]
 
     def __init__(
         self,
@@ -29,7 +29,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         detection_type: DETECTION_TYPE,
         msg: t.Callable[[EmbeddedVariables], MSG],
         datasource: str,
-        embedders: t.Optional[t.Sequence[Embedder]] = None,
+        embedders: t.Optional[t.Sequence[str]] = None,
     ) -> None:
         """create a validation rule
 
@@ -81,7 +81,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
     def message(self, embedded_vars: EmbeddedVariables) -> MSG:
         return self._msg(embedded_vars)
 
-    def embedders(self) -> t.Iterator[Embedder]:
+    def embedders(self) -> t.Iterator[str]:
         return iter(self._embedders)
 
     @property
@@ -89,7 +89,11 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         return self._datasource
 
     def exec(
-        self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
+        self,
+        *,
+        datasources: DataSources,
+        detected: DetectedType[ID, DETECTION_TYPE, MSG],
+        embedders: t.Mapping[str, Embedder],
     ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
         datasource = datasources[self.datasource_name]
         if not isinstance(datasource, SQLAlchemyDataSource):
@@ -101,7 +105,11 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
 
         sql_result = datasource.session.execute(sql)
         return [
-            self.detect(EmbeddedVariables.from_sqlalchemy(row), constructor=detected)
+            self.detect(
+                embedded_vars=EmbeddedVariables.from_sqlalchemy(row),
+                constructor=detected,
+                embedders=embedders,
+            )
             for row in sql_result
         ]
 
@@ -113,13 +121,14 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
 
     def __init__(
         self,
+        *,
         sql: str,
-        id_template: str,
-        level: int,
+        id: str,
+        level: int = DEFAULT_LEVEL,
         detection_type: str,
         msg: str,
         datasource: str,
-        embedders: t.Optional[t.Sequence[Embedder]] = None,
+        embedders: t.Optional[t.Sequence[str]] = None,
     ) -> None:
         """create a validation rule
 
@@ -129,7 +138,7 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
         ----------
         sql : str
             query to be executed to detect anomalies
-        id_template : str
+        id : str
             the template of a record ID of each row of SQL result;
             This ID is used to determine which record in the DB has the abnormality,
             so the ID is usually created from the primary key.
@@ -157,7 +166,7 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
             datasource=datasource,
             embedders=embedders,
         )
-        self._id_template = id_template
+        self._id_template = id
         self._msg_template = msg
 
     def _get_id_of_row(self, embedded_vars: EmbeddedVariables) -> str:

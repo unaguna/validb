@@ -81,8 +81,8 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
         pass
 
     @abc.abstractmethod
-    def embedders(self) -> t.Iterator[Embedder]:
-        """an iterator of the embedders registered in self
+    def embedders(self) -> t.Iterator[str]:
+        """an iterator of names of the embedders registered in self
 
         The variables used to create Detected instances while detecting anomalies are extended using these embedders.
         """
@@ -90,7 +90,11 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
 
     @abc.abstractmethod
     def exec(
-        self, datasources: DataSources, detected: DetectedType[ID, DETECTION_TYPE, MSG]
+        self,
+        *,
+        datasources: DataSources,
+        detected: DetectedType[ID, DETECTION_TYPE, MSG],
+        embedders: t.Mapping[str, Embedder],
     ) -> t.Sequence[Detected[ID, DETECTION_TYPE, MSG]]:
         """exec validation according the rule
 
@@ -103,6 +107,10 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
             constructor of detected anomalies;
             If anomalies are detected, this constructor is executed for that number of instances,
             and the returned instances become elements of the final detection list.
+        embedders : Mapping[str, Embedder]
+            Embedder that can be used.
+            The rule can use any one of these Embedders, or none of them.
+            Usually, each rule has its own Embedder.
 
         Returns
         -------
@@ -113,8 +121,10 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
 
     def detect(
         self,
+        *,
         embedded_vars: EmbeddedVariables,
         constructor: DetectedType[ID, DETECTION_TYPE, MSG],
+        embedders: t.Mapping[str, Embedder],
     ) -> Detected[ID, DETECTION_TYPE, MSG]:
         """construct Detected instance
 
@@ -125,6 +135,10 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
             In this function, the variable is extended with embedders registered in self before use.
         constructor : DetectedType
             the constructor of Detected
+        embedders : Mapping[str, Embedder]
+            Embedder that can be used.
+            The rule can use any one of these Embedders, or none of them.
+            Usually, each rule has its own Embedder.
 
         Returns
         -------
@@ -132,7 +146,9 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
             an abnormality detection
         """
         # Extend variables using embedder registered in self
-        embedded_vars = embedded_vars.extended(self.embedders())
+        embedded_vars = embedded_vars.extended(
+            (embedders[name] for name in self.embedders())
+        )
 
         return constructor(
             self.id_of_row(embedded_vars),

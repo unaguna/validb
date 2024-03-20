@@ -17,7 +17,11 @@ def main(config_path: str, dest_csv_path: t.Union[str, None]):
     config = load_config(config_path)
 
     with config.datasources:
-        detection_data = validate_db(rules=config.rules, datasources=config.datasources)
+        detection_data = validate_db(
+            rules=config.rules,
+            datasources=config.datasources,
+            embedders=config.embedders,
+        )
 
     click.echo(f"Detected: {detection_data.count}")
     if detection_data.count <= 0:
