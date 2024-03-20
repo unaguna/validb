@@ -6,7 +6,7 @@ from ..datasources import DataSources, SQLAlchemyDataSource
 from .._embedder import Embedder
 from .._embedded_vars import EmbeddedVariables
 from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
-from ._rule import Rule
+from ._rule import Rule, DEFAULT_LEVEL
 from ..formatter import MessageFormatter
 
 
@@ -121,9 +121,10 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
 
     def __init__(
         self,
+        *,
         sql: str,
-        id_template: str,
-        level: int,
+        id: str,
+        level: int = DEFAULT_LEVEL,
         detection_type: str,
         msg: str,
         datasource: str,
@@ -137,7 +138,7 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
         ----------
         sql : str
             query to be executed to detect anomalies
-        id_template : str
+        id : str
             the template of a record ID of each row of SQL result;
             This ID is used to determine which record in the DB has the abnormality,
             so the ID is usually created from the primary key.
@@ -165,7 +166,7 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
             datasource=datasource,
             embedders=embedders,
         )
-        self._id_template = id_template
+        self._id_template = id
         self._msg_template = msg
 
     def _get_id_of_row(self, embedded_vars: EmbeddedVariables) -> str:

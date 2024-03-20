@@ -10,7 +10,7 @@ from .._classloader import (
 from ..csvmapping import DetectionCsvMapping
 from ..datasources import DataSource, DataSources
 from .._embedder import Embedder
-from ..rules import SimpleSQLAlchemyRule, DEFAULT_LEVEL
+from ..rules import Rule
 from ._type import ConfigFile
 from ._config import Config
 
@@ -49,22 +49,27 @@ def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str,
     }
 
     return Config(
-        rules=[
-            SimpleSQLAlchemyRule(
-                sql=rule["sql"],
-                id_template=rule["id"],
-                level=rule.get("level", DEFAULT_LEVEL),
-                detection_type=rule["detection_type"],
-                msg=rule["msg"],
-                datasource=rule["datasource"],
-                embedders=rule.get("embedders"),
-            )
-            for rule in config_dict.get("rules", [])
-        ],
+        rules=[_construct_rule(rule) for rule in config_dict.get("rules", [])],
         datasources=DataSources(datasources),
         detected_csvmapping=csvmappings.get("detected"),
         embedders=embedders,
     )
+
+
+def _construct_rule(rule_attr: t.Mapping[str, t.Any]) -> Rule[t.Any, t.Any, t.Any]:
+    try:
+        return construct_imported_dinamically(
+            rule_attr,
+            Rule,  # type: ignore
+        )
+    except IllegalPathError as e:
+        raise ValueError(
+            f"rules.*.class must be a string like 'module.class'; actually specified path: {e.actual_path}"
+        )
+    except (UnexpectedClassLoadedError, NonClassLoadedError) as e:
+        raise TypeError(
+            f"rule must be instance of {Rule.__name__}; actual loaded: {e.actual_loaded}"
+        )
 
 
 def _construct_embedder(embedder_attr: t.Mapping[str, t.Any]) -> Embedder:
