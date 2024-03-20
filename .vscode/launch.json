@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "validb",
       "args": [
-        "-r",
+        "-c",
         "${workspaceFolder}/py/src/validb-use/validb_host.yml",
         "-D",
         "${workspaceFolder}/env/detected.csv"

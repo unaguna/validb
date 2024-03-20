@@ -10,11 +10,11 @@ from validb.csvmapping import SimpleDetectionCsvMapping
 
 @click.command()
 @click.option(
-    "--rules", "-r", "rules_path", required=True, type=click.Path(exists=True)
+    "--config", "-c", "config_path", required=True, type=click.Path(exists=True)
 )
 @click.option("--dest-csv", "-D", "dest_csv_path", type=click.Path())
-def main(rules_path: str, dest_csv_path: t.Union[str, None]):
-    config = load_config(rules_path)
+def main(config_path: str, dest_csv_path: t.Union[str, None]):
+    config = load_config(config_path)
 
     with config.datasources:
         detection_data = validate_db(rules=config.rules, datasources=config.datasources)
