@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # allow to import custom classes
     sys.path.append(os.path.join(os.path.dirname(__file__), "pythonpath"))
 
-    config = load_config(os.path.join(os.path.dirname(__file__), "rules_host.yml"))
+    config = load_config(os.path.join(os.path.dirname(__file__), "validb_host.yml"))
     with config.datasources:
         detection_data = validate_db(
             rules=config.rules,

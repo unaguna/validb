@@ -11,7 +11,7 @@
       "module": "validb",
       "args": [
         "-r",
-        "${workspaceFolder}/py/src/validb-use/rules_host.yml",
+        "${workspaceFolder}/py/src/validb-use/validb_host.yml",
         "-D",
         "${workspaceFolder}/env/detected.csv"
       ],
