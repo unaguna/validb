@@ -31,21 +31,21 @@ def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str,
     import yaml
 
     with open(filepath, mode="r") as fp:
-        rules: ConfigFile = yaml.safe_load(fp)
+        config_dict: ConfigFile = yaml.safe_load(fp)
 
     embedders: t.MutableMapping[str, Embedder] = {
-        embedder_name: _construct_embedder(embedder_attr)
-        for embedder_name, embedder_attr in rules.get("embedders", {}).items()
+        name: _construct_embedder(attr)
+        for name, attr in config_dict.get("embedders", {}).items()
     }
 
     datasources: t.Mapping[str, DataSource] = {
-        datasource_name: _construct_datasource(datasource_attr)
-        for datasource_name, datasource_attr in rules.get("datasources", {}).items()
+        name: _construct_datasource(attr)
+        for name, attr in config_dict.get("datasources", {}).items()
     }
 
     csvmappings: t.Mapping[str, DetectionCsvMapping] = {
-        csvmapping_name: _construct_csvmapping(csvmapping_attr)
-        for csvmapping_name, csvmapping_attr in rules.get("csvmappings", {}).items()
+        name: _construct_csvmapping(attr)
+        for name, attr in config_dict.get("csvmappings", {}).items()
     }
 
     return Config(
@@ -59,7 +59,7 @@ def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str,
                 datasource=rule["datasource"],
                 embedders=_construct_embedders(rule.get("embedders"), embedders),
             )
-            for rule in rules.get("rules", [])
+            for rule in config_dict.get("rules", [])
         ],
         DataSources(datasources),
         csvmappings.get("detected"),
