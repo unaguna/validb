@@ -12,13 +12,12 @@ from ..datasources import DataSource, DataSources
 from .._embedder import Embedder
 from ..rules import SimpleSQLAlchemyRule, DEFAULT_LEVEL
 from ._type import RulesFile
+from ._config import Config
 
 
 def load_rules_from_yaml(
     filepath: t.Union[str, bytes, pathlib.Path]
-) -> t.Tuple[
-    t.List[SimpleSQLAlchemyRule], DataSources, t.Optional[DetectionCsvMapping]
-]:
+) -> Config[str, str, str]:
     """Load validation rules from the YAML file.
 
     Parameters
@@ -28,8 +27,8 @@ def load_rules_from_yaml(
 
     Returns
     -------
-    list[Rule]
-        the validation rules
+    Config
+        the configuration of validation
     """
     import yaml
 
@@ -51,7 +50,7 @@ def load_rules_from_yaml(
         for csvmapping_name, csvmapping_attr in rules.get("csvmappings", {}).items()
     }
 
-    return (
+    return Config(
         [
             SimpleSQLAlchemyRule(
                 sql=rule["sql"],

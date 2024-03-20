@@ -14,17 +14,20 @@ from validb.csvmapping import SimpleDetectionCsvMapping
 )
 @click.option("--dest-csv", "-D", "dest_csv_path", type=click.Path())
 def main(rules_path: str, dest_csv_path: t.Union[str, None]):
-    rules, datasources, detected_csvmapping = load_rules_from_yaml(rules_path)
+    config = load_rules_from_yaml(rules_path)
 
-    with datasources:
-        detection_data = validate_db(rules=rules, datasources=datasources)
+    with config.datasources:
+        detection_data = validate_db(rules=config.rules, datasources=config.datasources)
 
     click.echo(f"Detected: {detection_data.count}")
     if detection_data.count <= 0:
         exit(0)
     else:
-        if detected_csvmapping is None:
-            detected_csvmapping = SimpleDetectionCsvMapping()
+        detected_csvmapping = (
+            config.detected_csvmapping
+            if config.detected_csvmapping is not None
+            else SimpleDetectionCsvMapping()
+        )
 
         if dest_csv_path is not None:
             with open(dest_csv_path, mode="w", newline="", encoding="utf_8") as fp:
