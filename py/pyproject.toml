@@ -16,7 +16,7 @@ exclude = ["validb-use*"]
 [project]
 name = "validb"
 dynamic = ["version"]
-dependencies = ["SQLAlchemy", "click"]
+dependencies = ["click"]
 requires-python = ">=3.8"
 authors = [{ name = "k-izumi", email = "k.izumi.ysk@gmail.com" }]
 description = "validate DB data"

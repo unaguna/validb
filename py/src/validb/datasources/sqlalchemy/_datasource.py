@@ -3,7 +3,7 @@ import typing as t
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session, scoped_session
 
-from ._datasource import DataSource
+from .._datasource import DataSource
 
 
 class SQLAlchemyDataSource(DataSource):

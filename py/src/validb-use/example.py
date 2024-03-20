@@ -11,8 +11,8 @@ from validb import (
     Rule,
     validate_db,
 )
-from validb.datasources import SQLAlchemyDataSource
-from validb.rules import SQLAlchemyRule
+from validb.datasources.sqlalchemy import SQLAlchemyDataSource
+from validb.rules.sqlalchemy import SQLAlchemyRule
 from validb.csvmapping import SimpleDetectionCsvMapping
 
 

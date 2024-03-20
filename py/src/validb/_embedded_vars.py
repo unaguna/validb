@@ -1,8 +1,6 @@
 import abc
 import typing as t
 
-import sqlalchemy
-
 
 class EmbeddedVariablesExtender(abc.ABC):
     @abc.abstractmethod
@@ -18,13 +16,6 @@ class EmbeddedVariables:
     def __init__(self, seq: t.Sequence[t.Any], mapping: t.Mapping[str, t.Any]):
         self._sequence = seq
         self._mapping = mapping
-
-    @classmethod
-    def from_sqlalchemy(cls, row: sqlalchemy.Row[t.Any]) -> "EmbeddedVariables":
-        return EmbeddedVariables(
-            row,
-            row._mapping,  # type: ignore
-        )
 
     def __len__(self) -> int:
         return len(self._sequence)

@@ -1,12 +1,12 @@
 rules:
-  - class: validb.rules.SimpleSQLAlchemyRule
+  - class: validb.rules.sqlalchemy.SimpleSQLAlchemyRule
     sql: "SELECT Code FROM country where InDepYear is NULL"
     id: "{0}"
     detection_type: "NULL_YEAR"
     msg: "null year; Code={0}, today={today}, yesterday={yesterday}"
     datasource: "mysql"
     embedders: ["today_embedder", "yesterday_embedder"]
-  - class: validb.rules.SimpleSQLAlchemyRule
+  - class: validb.rules.sqlalchemy.SimpleSQLAlchemyRule
     sql: "SELECT Code, SurfaceArea, Population FROM country where SurfaceArea < Population"
     id: "{Code}"
     level: 1
@@ -22,7 +22,7 @@ embedders:
     shift: -1
 datasources:
   mysql:
-    class: validb.datasources.SQLAlchemyDataSource
+    class: validb.datasources.sqlalchemy.SQLAlchemyDataSource
     url: "mysql+pymysql://?read_default_file=./validb-use/host_my.cnf"
 csvmappings:
   detected:
