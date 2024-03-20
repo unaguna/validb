@@ -107,7 +107,10 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
         sql_result = datasource.session.execute(sql)
         return [
             self.detect(
-                embedded_vars=EmbeddedVariables.from_sqlalchemy(row),
+                embedded_vars=EmbeddedVariables(
+                    row,
+                    row._mapping,  # type: ignore
+                ),
                 constructor=detected,
                 embedders=embedders,
             )
