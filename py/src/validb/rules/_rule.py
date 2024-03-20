@@ -58,6 +58,21 @@ class Rule(t.Generic[ID, DETECTION_TYPE, MSG], abc.ABC):
     def message(self, embedded_vars: EmbeddedVariables) -> MSG:
         """Message to be used when an abnormality is detected.
 
+        It must be implemented in a concrete class, typically using a template as follows:
+
+        >>> from validb.formatter.MessageFormatter
+        >>>
+        >>> class MyRule(Rule[str, str, str]):
+        >>>     # Formatter with no error if key not found
+        >>>     _formatter = MessageFormatter()
+        >>>
+        >>>     # initialize this in self.__init__()
+        >>>     _fmt: str
+        >>>
+        >>>     def message(self, embedded_vars: EmbeddedVariables) -> str:
+        >>>         return self._formatter.vformat(self._fmt, embedded_vars.sequence, embedded_vars.mapping)
+        >>>
+
         Parameters
         ----------
         embedded_vars : EmbeddedVariables

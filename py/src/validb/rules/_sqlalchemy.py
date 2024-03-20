@@ -7,6 +7,7 @@ from .._embedder import Embedder
 from .._embedded_vars import EmbeddedVariables
 from .._detected import ID, MSG, DETECTION_TYPE, Detected, DetectedType
 from ._rule import Rule
+from ..formatter import MessageFormatter
 
 
 class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE, MSG]):
@@ -106,6 +107,7 @@ class SQLAlchemyRule(t.Generic[ID, DETECTION_TYPE, MSG], Rule[ID, DETECTION_TYPE
 
 
 class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
+    _formatter = MessageFormatter()
     _id_template: str
     _msg_template: str
 
@@ -164,6 +166,6 @@ class SimpleSQLAlchemyRule(SQLAlchemyRule[str, str, str]):
         )
 
     def _get_message(self, embedded_vars: EmbeddedVariables) -> str:
-        return self._msg_template.format(
-            *embedded_vars.sequence, **embedded_vars.mapping
+        return self._formatter.vformat(
+            self._msg_template, embedded_vars.sequence, embedded_vars.mapping
         )
