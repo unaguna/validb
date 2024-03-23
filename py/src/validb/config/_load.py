@@ -1,13 +1,13 @@
 import pathlib
 import typing as t
 
-from .._classloader import construct_imported_dinamically
 from ..csvmapping import DetectionCsvMapping
 from ..datasources import DataSource, DataSources
 from .._embedder import Embedder
 from ..rules import Rule
 from ._type import ConfigFile
 from ._config import Config
+from ._parse import parse_object
 
 
 def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str, str]:
@@ -52,20 +52,3 @@ def load_config(filepath: t.Union[str, bytes, pathlib.Path]) -> Config[str, str,
         detected_csvmapping=csvmappings.get("detected"),
         embedders=embedders,
     )
-
-
-_T = t.TypeVar("_T")
-
-
-def parse_object(
-    attr: t.Mapping[str, t.Any], path: str, expected_class: t.Type[_T]
-) -> _T:
-    try:
-        return construct_imported_dinamically(attr, expected_class=expected_class)
-    except Exception as e:
-        raise ParseObjectException(path) from e
-
-
-class ParseObjectException(Exception):
-    def __init__(self, object_path: str) -> None:
-        super().__init__(f"failed to parse object {object_path}")
