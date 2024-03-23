@@ -31,3 +31,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/unaguna/validb"
 Repository = "https://github.com/unaguna/validb.git"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = ["src/tests"]
