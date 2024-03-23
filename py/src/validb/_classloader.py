@@ -27,6 +27,34 @@ def import_class_dinamically(
     *,
     expected_class: t.Type[T],
 ) -> t.Type[T]:
+    """import class dinamically
+
+    Parameters
+    ----------
+    path : str
+        The pass of class. Include module name.
+    expected_class : Type
+        The class expected.
+        The class to be imported here is required to be a subclass of this class.
+
+    Returns
+    -------
+    Type
+        The class imported
+
+    Raises
+    ------
+    IllegalPathError
+        Illegal class name was specified.
+    NonClassLoadedError
+        A non-class object loaded.
+    UnexpectedClassLoadedError
+        A class different from the one specified was loaded.
+    ModuleNotFoundError
+        The specified module does not exist.
+    AttributeError
+        The specified class does not exist in the specified module.
+    """
     if not isinstance(path, str):
         raise IllegalPathError(path)
 
