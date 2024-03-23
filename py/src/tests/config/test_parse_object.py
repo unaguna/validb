@@ -1,9 +1,31 @@
 import typing as t
 
+import pytest
+
 from validb import Rule, EmbeddedVariables
 from validb.config import parse_object
 
 
+def test__parse_object():
+    # Try this function for some class in the standard library.
+
+    attr: t.Mapping[str, t.Any] = {
+        "class": "decimal.Decimal",
+        "value": "1.02",
+    }
+    value: t.Any = parse_object(
+        attr,
+        path="",
+        expected_class=object,
+    )
+
+    from decimal import Decimal
+
+    assert isinstance(value, Decimal)
+    assert value == Decimal(attr["value"])
+
+
+@pytest.mark.require_sqlalchemy
 def test__parse_object__SimpleSQLAlchemyRule():
     attr: t.Mapping[str, t.Any] = {
         "class": "validb.rules.sqlalchemy.SimpleSQLAlchemyRule",
