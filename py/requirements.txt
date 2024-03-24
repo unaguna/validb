@@ -1,4 +1,6 @@
-SQLAlchemy~=2.0.27
-pymysql~=1.1.0
+click
+SQLAlchemy
+pymysql
 pyyaml
-click~=8.1.7
+
+pytest

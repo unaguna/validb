@@ -1,4 +1,5 @@
 dtcsvmapping
 embedders
 pymysql
+pytest
 validb
