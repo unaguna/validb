@@ -5,6 +5,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Pytest",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v"],
+      "cwd": "${workspaceFolder}/py"
+    },
+    {
+      "name": "Pytest - minimum",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v", "--independent"],
+      "cwd": "${workspaceFolder}/py"
+    },
+    {
       "name": "Run Module validb",
       "type": "debugpy",
       "request": "launch",
