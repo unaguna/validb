@@ -37,4 +37,5 @@ pythonpath = "src"
 testpaths = ["src/tests"]
 markers = [
     "require_sqlalchemy: marks tests as ones that require SQLAlchemy (deselect with '-m \"not require_sqlalchemy\"')",
+    "require_pyyaml: marks tests as ones that require PyYAML (deselect with '-m \"not require_pyyaml\"')",
 ]
